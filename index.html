@@ -13,7 +13,7 @@
   --bg:#eef1f4; --surface:#ffffff; --surface-2:#f5f7f9; --sunk:#e3e8ed; --line:#d7dde4; --line-2:#c2cbd4;
   --fg:#14202b; --fg-2:#4b5966; --fg-3:#768491;
   --accent:#2443c4; --accent-ink:#ffffff; --accent-soft:#e4e9fb; --accent-line:#b7c4f1;
-  --c-strain:#c27905; --c-plasmid:#7346c8; --c-oligo:#0a8279; --c-reagent:#c43b61; --c-other:#5d6b78;
+  --c-exp:#7c5cff;--c-strain:#c27905; --c-plasmid:#7346c8; --c-oligo:#0a8279; --c-reagent:#c43b61; --c-other:#5d6b78;
   --cap-ink:#ffffff;
   --ok:#1b7a44; --ok-soft:#dbf0e3; --warn:#94600a; --warn-soft:#fbefd5; --bad:#b12626; --bad-soft:#fbe0e0;
   --shadow:0 1px 2px rgba(20,32,43,.06),0 10px 30px rgba(20,32,43,.10);
@@ -27,7 +27,7 @@
   --bg:#0c1116; --surface:#141b22; --surface-2:#19212a; --sunk:#0f151b; --line:#253039; --line-2:#33414e;
   --fg:#e2e8ee; --fg-2:#a2afbc; --fg-3:#72808e;
   --accent:#8199ff; --accent-ink:#0c1116; --accent-soft:#1b2446; --accent-line:#34449a;
-  --c-strain:#f0a73a; --c-plasmid:#a888f1; --c-oligo:#3cc3b7; --c-reagent:#f07899; --c-other:#93a1ae;
+  --c-exp:#a99bff;--c-strain:#f0a73a; --c-plasmid:#a888f1; --c-oligo:#3cc3b7; --c-reagent:#f07899; --c-other:#93a1ae;
   --cap-ink:#0c1116;
   --ok:#5cc88a; --ok-soft:#13301f; --warn:#e7b24f; --warn-soft:#342910; --bad:#f27a7a; --bad-soft:#3a1717;
   --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px rgba(0,0,0,.4); --scrim:rgba(0,0,0,.58);
@@ -460,6 +460,7 @@ main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
 .gelview{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
 .gelcanvas{min-height:120px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border-radius:var(--r-sm);overflow:hidden;cursor:crosshair}
 .gelcanvas canvas{max-width:100%;border-radius:2px}
+.gelmini{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
 .gelgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .gelcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column}
 .gelcard:hover{border-color:var(--line-2)}
@@ -553,6 +554,7 @@ const IC={
  note:'<path d="M5 3h14v18H5z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
  calc:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8.5 11.5h0M12 11.5h0M15.5 11.5h0M8.5 15h0M12 15h0M15.5 15h0M8.5 18h0M12 18h0M15.5 18h0" stroke-width="2.4"/>',
  pcr:'<path d="M4 18c3 0 3-12 6-12s3 12 6 12 2-6 4-6"/><path d="M3 21h18"/>',
+ exp:'<path d="M9 3h6M10 3v6.5L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 14h9"/>',
  gel:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M12 3v18M16 3v18"/><path d="M5.5 8h3M9.5 11h3M13.5 8h3M5.5 14h3M13.5 15h3" stroke-width="2.2"/>'
 };
 const ic=(n,c='')=>`<svg class="ico ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]||''}</svg>`;
@@ -589,9 +591,10 @@ const ROLES=['IP','Postdoc','Doctorando/a','Técnico/a','Estudiante TFG/TFM','Co
 const STOCK=['Suficiente','Queda poco','Agotado'];
 const MS_STATUS=['Pendiente','En curso','Hecho'];
 const MS_KINDS=['Plan de investigación','Informe anual','Experimento','Artículo','Congreso','Estancia','Formación','Depósito y defensa','Otro'];
-const TK=['strains','plasmids','oligos','reagents'];
-const ART={strains:'la cepa',plasmids:'el plásmido',oligos:'el oligo',reagents:'el reactivo',protocols:'el protocolo',boxes:'la caja',theses:'la tesis',milestones:'el hito'};
+const TK=['strains','plasmids','oligos','reagents','experiments'];
+const ART={experiments:'el experimento',strains:'la cepa',plasmids:'el plásmido',oligos:'el oligo',reagents:'el reactivo',protocols:'el protocolo',boxes:'la caja',theses:'la tesis',milestones:'el hito'};
 
+const EXP_KINDS=['Clonaje','Purificación de proteína','Antagonismo o competición','Secreción y T6SS','Microscopía','Infección en planta','Curva de crecimiento','Secuenciación','Ómicas','Otro'];
 const T={
  strains:{route:'cepas',label:'Cepas',one:'cepa',nuevo:'Nueva cepa',color:'strain',icon:'strain',pre:p=>p+'-',status:['Activa','Agotada','Descartada'],hasMark:true,
   fields:[
@@ -659,6 +662,29 @@ const T={
    {l:'Tm',v:d=>{const i=oligoInfo(d.seq);return i?`<span class="num">${(i.ann||i).tm} °C</span>`:''}},
    {l:'Ubicación',v:d=>locShort(d.loc)}
   ]},
+ experiments:{route:'experimentos',label:'Experimentos',one:'experimento',nuevo:'Nuevo experimento',color:'exp',icon:'exp',pre:p=>'e'+p+'-',status:['Planificado','En curso','Terminado','Descartado'],
+  fields:[
+   {k:'name',l:'Título',req:true,ph:'Purificación de Tse1-His6'},
+   {k:'kind',l:'Tipo de experimento',t:'select',half:true,opts:EXP_KINDS},
+   {k:'status',l:'Estado',t:'select',half:true,opts:['Planificado','En curso','Terminado','Descartado']},
+   {k:'date',l:'Fecha de inicio',t:'date',half:true},
+   {k:'end',l:'Fecha de fin',t:'date',half:true},
+   {k:'aim',l:'Objetivo',t:'textarea',rows:2,ph:'Qué quieres averiguar'},
+   {k:'strains',l:'Cepas',t:'refs',ref:'strains'},
+   {k:'plasmids',l:'Plásmidos',t:'refs',ref:'plasmids'},
+   {k:'oligos',l:'Oligos',t:'refs',ref:'oligos'},
+   {k:'protocols',l:'Protocolos seguidos',t:'refs',ref:'protocols'},
+   {k:'result',l:'Resultado',t:'textarea',rows:5,ph:'Qué ha salido'},
+   {k:'conclusion',l:'Conclusión',t:'textarea',rows:2,ph:'Qué se concluye y qué toca después'},
+   {k:'notes',l:'Notas',t:'textarea'}
+  ],
+  search:d=>[d.code,d.name,d.kind,d.aim,d.result,d.conclusion,d.notes],
+  cols:[
+   {l:'Tipo',v:d=>esc(d.kind||'')},
+   {l:'Fecha',v:d=>esc(d.date?fmtD(d.date):'')},
+   {l:'Material',v:d=>{const n=(d.strains||[]).length+(d.plasmids||[]).length+(d.oligos||[]).length;return n?`<span class="num">${n}</span>`:''}},
+   {l:'Geles',v:d=>{const n=[...S.data.gels.values()].filter(g=>g.exp===d._id).length;return n?`<span class="num">${n}</span>`:''}}
+  ]},
  reagents:{route:'reactivos',label:'Reactivos',one:'reactivo',nuevo:'Nuevo reactivo',color:'reagent',icon:'reagent',pre:()=>'R-',status:STOCK,
   fields:[
    {k:'name',l:'Nombre',req:true,ph:'Nombre del producto'},
@@ -683,7 +709,7 @@ const T={
 };
 
 /* ---------- state ---------- */
-const COLLS=['strains','plasmids','oligos','reagents','protocols','boxes','theses','milestones','members','meta'];
+const COLLS=['strains','plasmids','oligos','reagents','protocols','boxes','theses','milestones','members','meta','experiments'];
 const S={mode:'loading',uid:null,canWrite:true,names:{},colors:{},route:'inicio',filters:{},data:{},got:new Set(),detail:null,boxSel:null,boxHi:null,meTab:'tareas',imp:null,slow:false,err:null,onboardAsked:false,protoQ:'',gsIdx:0};
 COLLS.forEach(c=>S.data[c]=new Map());
 S.data.personal=new Map();
@@ -729,8 +755,10 @@ function markChips(r,full){if(!r||!r.length)return '';return `<span class="res">
 function stockTag(d){const s=d.stock||'Suficiente';const cls=s==='Agotado'?'bad':s==='Queda poco'?'warn':'ok';return `<span class="tag ${cls}">${esc(s)}</span>${d.order?` <span class="tag demo" title="En la lista de pedidos">Pedir</span>`:''}`}
 function expTag(e){if(!e)return '';const n=dayDiff(e);if(n==null)return esc(e);if(n<0)return `<span class="tag bad">Caducado</span>`;if(n<=30)return `<span class="tag warn">${n===0?'Caduca hoy':`En ${n} días`}</span>`;return `<span class="small">${fmtD(e)}</span>`}
 function statusTag(type,d){if(type==='reagents')return '';const v=d.status;if(!v||v===T[type].status[0])return '';return ` <span class="tag ${/Agotad/.test(v)?'warn':''}">${esc(v)}</span>`}
-function codeOf(type,id){const d=S.data[type].get(id);return d?d.code:''}
-function refLink(type,id){const d=id&&S.data[type]&&S.data[type].get(id);if(!d)return '';return `<button class="rlink" data-a="open" data-type="${type}" data-id="${esc(id)}"><span class="cap" style="--cap:var(--c-${T[type].color})"></span><span class="code">${esc(d.code)}</span><span class="nm">${esc(d.name)}</span></button>`}
+function codeOf(type,id){const d=S.data[type].get(id);return d?(rCode(d)||rName(d)):''}
+const rCode=d=>String((d&&d.code)||'');
+const rName=d=>String((d&&(d.name||d.title||d.label))||'');
+function refLink(type,id){const d=id&&S.data[type]&&S.data[type].get(id);if(!d)return '';const col=(T[type]&&T[type].color)||'exp';return `<button class="rlink" data-a="open" data-type="${type}" data-id="${esc(id)}"><span class="cap" style="--cap:var(--c-${col})"></span>${rCode(d)?`<span class="code">${esc(rCode(d))}</span>`:''}<span class="nm">${esc(rName(d))}</span></button>`}
 function uniq(type,k){const s=new Set();for(const d of S.data[type].values())if(d[k])s.add(d[k]);return [...s].sort(natCmp)}
 function hasDemo(){return [...TK,'protocols','boxes'].some(c=>[...S.data[c].values()].some(d=>d.demo))}
 
@@ -793,7 +821,7 @@ const NAV=[
  {g:'Colecciones'},
  {r:'cepas',l:'Cepas',i:'strain',t:'strains'},{r:'plasmidos',l:'Plásmidos',i:'plasmid',t:'plasmids'},{r:'oligos',l:'Oligos',i:'oligo',t:'oligos'},{r:'reactivos',l:'Reactivos',i:'reagent',t:'reagents'},{r:'congelador',l:'Congelador',i:'freezer',t:'boxes'},
  {g:'Grupo'},
- {r:'protocolos',l:'Protocolos',i:'protocol',t:'protocols'},{r:'tesis',l:'Tesis',i:'thesis',t:'theses'},
+ {r:'experimentos',l:'Experimentos',i:'exp',t:'experiments'},{r:'protocolos',l:'Protocolos',i:'protocol',t:'protocols'},{r:'tesis',l:'Tesis',i:'thesis',t:'theses'},
  {g:'Herramientas'},
  {r:'calculadoras',l:'Calculadoras',i:'calc'},
  {r:'geles',l:'Geles',i:'gel'},
@@ -867,7 +895,7 @@ function listBody(type){
 }
 function emptyList(type){
  const t=T[type];
- const msg={strains:'Registra cada cepa con su glicerol: descripción, marcadores, plásmidos que porta y en qué hueco del congelador está.',plasmids:'Cada plásmido con su vector base, inserto, marcadores, tamaño y dónde está el ADN.',oligos:'Pega la secuencia y se calculan longitud, %GC y Tm. Las colas en minúsculas se separan de la parte que hibrida.',reagents:'Stock, caducidades y una lista de pedidos que cualquiera del grupo puede completar.'}[type];
+ const msg={experiments:'Un experimento ata todo lo demás: las cepas y plásmidos que usaste, el protocolo que seguiste, los geles que salieron y lo que concluiste.',strains:'Registra cada cepa con su glicerol: descripción, marcadores, plásmidos que porta y en qué hueco del congelador está.',plasmids:'Cada plásmido con su vector base, inserto, marcadores, tamaño y dónde está el ADN.',oligos:'Pega la secuencia y se calculan longitud, %GC y Tm. Las colas en minúsculas se separan de la parte que hibrida.',reagents:'Stock, caducidades y una lista de pedidos que cualquiera del grupo puede completar.'}[type];
  return `<div class="empty">${ic(t.icon)}<h2>Aún no hay ${t.label.toLowerCase()}</h2><p>${msg}</p>${S.canWrite?`<div class="vacts"><button class="btn primary" data-a="new" data-type="${type}">${ic('plus')}${t.nuevo}</button><button class="btn" data-a="go-import" data-type="${type}">${ic('import')}Importar desde Excel</button></div>`:''}</div>`;
 }
 
@@ -1079,9 +1107,10 @@ function setBody(){
    <div class="fld half"><label class="lbl" for="set-role">Papel en el grupo</label><select id="set-role">${ROLES.map(r=>`<option${m.role===r?' selected':''}>${r}</option>`).join('')}</select></div></div>
    <p class="small mute">Tus códigos: <span class="mono">${esc(pre)}-001</span> (cepas), <span class="mono">p${esc(pre)}-001</span> (plásmidos), <span class="mono">o${esc(pre)}-001</span> (oligos). Los reactivos usan una numeración común, <span class="mono">R-001</span>.</p>
    <p class="ferr" id="set-err"></p>${S.canWrite?`<div class="vacts"><button class="btn primary" data-a="set-save">Guardar perfil</button></div>`:''}</section>`:''}
-  <section class="card"><h2>Reglas de Firebase para los geles</h2><p class="small mute">Los geles se guardan en dos colecciones nuevas, <span class="mono">gels</span> y <span class="mono">gelimgs</span>. Si al guardar uno sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y a&ntilde;ade estos dos nombres al final de la lista de colecciones que ya hay, dentro de <span class="mono">match /{coleccion}/{id}</span>. Luego pulsa Publicar.</p><pre class="rulebox mono">['strains', 'plasmids', 'oligos', 'reagents', 'protocols',
+  <section class="card"><h2>Reglas de Firebase</h2><p class="small mute">Las funciones nuevas usan colecciones que las reglas todavía no permiten. Si al guardar sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y sustituye la lista de colecciones que ya hay por esta, dentro de <span class="mono">match /{coleccion}/{id}</span>. Luego pulsa Publicar.</p><pre class="rulebox mono">['strains', 'plasmids', 'oligos', 'reagents', 'protocols',
  'boxes', 'theses', 'milestones', 'meta',
- 'gels', 'gelimgs']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
+ 'experiments', 'gels', 'gelimgs',
+ 'chroms', 'seqruns', 'preps']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
    <p class="small mute" style="margin-top:10px">Para sumar a alguien, añade su correo a la lista de acceso (consola de Firebase → Firestore Database → Reglas) y pásale la dirección de la web. Aparecerá aquí cuando entre por primera vez.</p></section>
  </div><div class="stack">
   <section class="card stack"><h2>Exportar</h2><p class="small mute">CSV con punto y coma, listo para abrir en Excel. Caja y posición van en columnas separadas, así que se puede volver a importar.</p><div class="vacts">${TK.map(t=>`<button class="btn sm" data-a="export" data-type="${t}">${ic('download')}${T[t].label}</button>`).join('')}</div><div class="vacts"><button class="btn sm" data-a="backup-json">${ic('download')}Copia completa (JSON)</button></div></section>
@@ -1254,6 +1283,17 @@ function detailBody(type,d){
   h+=`<dl class="kvs">${kv('Diana',esc(d.target))}${kv('Uso',esc(d.purpose))}${kv('Oligo pareja',refLink('oligos',d.partner))}${kv('Plásmido',refLink('plasmids',d.plasmid))}${kv('Proveedor',esc(d.supplier))}${kv('Stock',d.conc!=null&&d.conc!==''?`<span class="mono">${esc(d.conc)} µM</span>`:'')}${notesKV(d)}</dl>`;
   h+=linkList('Lo usan como pareja',[...S.data.oligos.values()].filter(x=>x.partner===d._id&&x._id!==d.partner).map(k=>refLink('oligos',k._id)));
   h+=locSection(d);
+ }else if(type==='experiments'){
+  h+=`<dl class="kvs">${kv('Tipo',esc(d.kind))}${kv('Fechas',[d.date&&fmtD(d.date),d.end&&fmtD(d.end)].filter(Boolean).join(' – '))}</dl>`;
+  if(d.aim)h+=`<section class="dsec"><h3>Objetivo</h3><p class="dtxt">${esc(d.aim)}</p></section>`;
+  h+=linkList('Cepas',(d.strains||[]).map(x=>refLink('strains',x)));
+  h+=linkList('Plásmidos',(d.plasmids||[]).map(x=>refLink('plasmids',x)));
+  h+=linkList('Oligos',(d.oligos||[]).map(x=>refLink('oligos',x)));
+  h+=linkList('Protocolos',(d.protocols||[]).map(x=>refLink('protocols',x)));
+  const gs=[...S.data.gels.values()].filter(g=>g.exp===d._id).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  h+=`<section class="dsec"><h3>Geles</h3>${gs.length?`<div class="gelmini">${gs.map(g=>`<a class="gelcard" href="#geles/${esc(g._id)}">${g.thumb?`<img src="${esc(g.thumb)}" alt="" loading="lazy">`:'<div class="gelph"></div>'}<div class="gelcard-b"><b>${esc(g.title||'Sin título')}</b><span class="small mute">${esc(g.date?fmtD(g.date):'')}</span></div></a>`).join('')}</div>`:'<p class="small mute">Todavía no hay ninguno.</p>'}${S.canWrite?`<div class="pacts"><button class="btn sm" data-a="gel-forexp" data-id="${esc(d._id)}">${ic('gel')}Añadir un gel</button></div>`:''}</section>`;
+  if(d.result)h+=`<section class="dsec"><h3>Resultado</h3><p class="dtxt">${esc(d.result)}</p></section>`;
+  if(d.conclusion)h+=`<section class="dsec"><h3>Conclusión</h3><p class="dtxt">${esc(d.conclusion)}</p></section>`;
  }else if(type==='reagents'){
   h+=`<section class="dsec"><h3>Stock</h3><div class="seg" role="group" aria-label="Stock">${STOCK.map(s=>`<button data-a="reag-stock" data-v="${s}" aria-pressed="${(d.stock||'Suficiente')===s}"${S.canWrite?'':' disabled'}>${s}</button>`).join('')}</div>${S.canWrite?`<label class="switch"><input type="checkbox" id="reag-order" data-a="reag-order"${d.order?' checked':''}> En la lista de pedidos</label>`:''}</section>`;
   h+=`<dl class="kvs">${kv('Proveedor',esc(d.supplier))}${kv('Catálogo',d.cat?`<span class="mono">${esc(d.cat)}</span>`:'')}${kv('CAS',d.cas?`<span class="mono">${esc(d.cas)}</span>`:'')}${kv('Formato',esc(d.amount))}${kv('Dónde está',esc(d.where))}${kv('Caducidad',d.expiry?expTag(d.expiry)+` <span class="small mute">${fmtD(d.expiry)}</span>`:'')}${kv('Abierto',fmtD(d.opened))}${notesKV(d)}</dl>`;
@@ -1292,9 +1332,9 @@ function fieldHTML(f,v){
   case 'date':inner=`<input id="${id}" type="date" value="${esc(v||'')}">`;break;
   case 'url':inner=`<input id="${id}" type="url" value="${esc(v||'')}" placeholder="${ph}" autocomplete="off">`;break;
   case 'select':inner=`<select id="${id}">${f.blank?`<option value="">${esc(f.blank)}</option>`:''}${f.opts.map(o=>{const [val,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(val)}"${String(v??'')===String(val)?' selected':''}>${esc(l)}</option>`}).join('')}</select>`;break;
-  case 'ref1':{const ds=[...S.data[f.ref].values()].filter(d=>d._id!==f.exclude).sort((a,b)=>natCmp(a.code,b.code));inner=`<select id="${id}"><option value="">Ninguno</option>${ds.map(d=>`<option value="${esc(d._id)}"${v===d._id?' selected':''}>${esc(d.code)} · ${esc(d.name)}</option>`).join('')}</select>`;break}
+  case 'ref1':{const ds=[...S.data[f.ref].values()].filter(d=>d._id!==f.exclude).sort((a,b)=>natCmp(rCode(a)||rName(a),rCode(b)||rName(b)));inner=`<select id="${id}"><option value="">Ninguno</option>${ds.map(d=>`<option value="${esc(d._id)}"${v===d._id?' selected':''}>${esc([rCode(d),rName(d)].filter(Boolean).join(' · '))}</option>`).join('')}</select>`;break}
   case 'chips':inner=`<div class="chipset" role="group" aria-label="${esc(f.l)}">${f.opts.map(([val,title])=>`<label class="chip-opt" title="${esc(title)}"><input type="checkbox" name="${id}" value="${esc(val)}"${(v||[]).includes(val)?' checked':''}><span>${esc(val)}</span></label>`).join('')}</div>`;break;
-  case 'refs':{const ds=[...S.data[f.ref].values()].sort((a,b)=>natCmp(a.code,b.code));inner=ds.length?`${ds.length>8?`<input class="cl-filter" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.l)}">`:''}<div class="checklist">${ds.map(d=>`<label data-q="${esc(norm(d.code+' '+d.name))}"><input type="checkbox" name="${id}" value="${esc(d._id)}"${(v||[]).includes(d._id)?' checked':''}><span class="code">${esc(d.code)}</span><span>${esc(d.name)}</span></label>`).join('')}</div>`:`<p class="small mute">Aún no hay ${T[f.ref].label.toLowerCase()} registrados.</p>`;break}
+  case 'refs':{const ds=[...S.data[f.ref].values()].sort((a,b)=>natCmp(rCode(a)||rName(a),rCode(b)||rName(b)));inner=ds.length?`${ds.length>8?`<input class="cl-filter" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.l)}">`:''}<div class="checklist">${ds.map(d=>`<label data-q="${esc(norm(rCode(d)+' '+rName(d)))}"><input type="checkbox" name="${id}" value="${esc(d._id)}"${(v||[]).includes(d._id)?' checked':''}>${rCode(d)?`<span class="code">${esc(rCode(d))}</span>`:''}<span>${esc(rName(d))}</span></label>`).join('')}</div>`:`<p class="small mute">Aún no hay ${(T[f.ref]?T[f.ref].label:'registros').toLowerCase()} registrados.</p>`;break}
   case 'bool':inner=`<label class="switch"><input id="${id}" type="checkbox"${v?' checked':''}> ${esc(f.cl||'Sí')}</label>`;break;
   case 'loc':inner=locPickerHTML(v,f.exclude);break;
   default:inner=`<input id="${id}" type="text" value="${esc(v??'')}" placeholder="${ph}"${f.list?` list="dl-${f.k}"`:''}${f.mono?' class="mono"':''} autocomplete="off">${f.list?`<datalist id="dl-${f.k}">${f.list().map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist>`:''}`;
@@ -1428,7 +1468,7 @@ function addMenu(){
  if(!S.canWrite){toast('Tienes acceso de solo lectura.');return}
  openSheet('Añadir',TK.map(t=>`<button data-a="new" data-type="${t}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo}</button>`).join('')+`<button data-a="new-box">${ic('freezer')}Nueva caja</button><button data-a="proto-new">${ic('protocol')}Nuevo protocolo</button>${S.uid?`<button data-a="note-new">${ic('note')}Nota privada</button>`:''}<a href="#importar">${ic('import')}Importar una lista</a>`);
 }
-function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['calculadoras','Calculadoras','calc'],['geles','Geles','gel'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
+function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['experimentos','Experimentos','exp'],['calculadoras','Calculadoras','calc'],['geles','Geles','gel'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
 function cellMenu(box,pos){
  if(!S.canWrite)return;const b=S.data.boxes.get(box);
  openSheet(`${b?b.name:'Caja'} · ${pos}`,['strains','plasmids','oligos'].map(t=>`<button data-a="new-at" data-type="${t}" data-box="${box}" data-pos="${pos}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo} aquí</button>`).join(''));
@@ -2573,7 +2613,7 @@ const LAZY={};
 function lazySub(c){if(LAZY[c])return;LAZY[c]=1;store.sub(c,m=>{S.data[c]=m;S.got.add(c);dirty(c)})}
 const GEL_KIND=[['agarosa','Agarosa (ADN)'],['page','Poliacrilamida (proteína)']];
 const GEL_UNIT={agarosa:'pb',page:'kDa'};
-const gelDef=()=>({title:'',kind:'agarosa',date:new Date().toISOString().slice(0,10),notes:'',strains:[],plasmids:[],
+const gelDef=()=>({title:'',kind:'agarosa',exp:'',date:new Date().toISOString().slice(0,10),notes:'',strains:[],plasmids:[],
  adj:{rot:0,cl:0,cr:0,ct:0,cb:0,bright:100,contrast:100,invert:false,gray:true},
  lanes:{n:8,x0:0.08,x1:0.92,angle:0,show:true,labels:[]},
  mk:{unit:'pb',show:true,items:[]},
@@ -2714,7 +2754,7 @@ async function gelSave(){
  if(!G.img){toast('Falta la foto del gel.');return}
  if(!String(G.title||'').trim()){toast('Ponle un título al gel.');$('#gel-title')&&$('#gel-title').focus();return}
  const isNew=!!G._new;const id=isNew?store.newId('gels'):G._id;
- const doc={title:G.title,kind:G.kind,date:G.date,notes:G.notes,strains:G.strains,plasmids:G.plasmids,
+ const doc={title:G.title,kind:G.kind,date:G.date,notes:G.notes,exp:G.exp||'',strains:G.strains,plasmids:G.plasmids,
   w:G.w,h:G.h,adj:G.adj,lanes:G.lanes,mk:G.mk,style:G.style,thumb:G.thumb||'',
   updatedAt:now(),updatedBy:S.uid};
  if(isNew){doc.createdAt=now();doc.createdBy=S.uid;doc.owner=S.uid}else{doc.createdAt=G.createdAt||now();doc.createdBy=G.createdBy||S.uid;doc.owner=G.owner||S.uid}
@@ -2758,7 +2798,7 @@ function gelListBody(){
  lazySub('gels');lazySub('gelimgs');
  const ds=[...S.data.gels.values()].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||natCmp(a.title,b.title));
  if(!ds.length)return `<section class="card"><h2>Todavía no hay geles</h2><p class="small mute">Pulsa «Nuevo gel» y elige una foto. Puedes recortarla, enderezarla, ajustar brillo y contraste, poner los carriles y el marcador, y exportarla a la resolución que te pida la revista.</p><p class="small mute">Si al guardar sale un aviso de permisos, hay que añadir dos colecciones a las reglas de Firebase. Las tienes en Ajustes.</p></section>`;
- return `<div class="gelgrid">${ds.map(d=>`<a class="gelcard" href="#geles/${esc(d._id)}">${d.thumb?`<img src="${esc(d.thumb)}" alt="" loading="lazy">`:'<div class="gelph"></div>'}<div class="gelcard-b"><b>${esc(d.title||'Sin título')}</b><span class="small mute">${esc((GEL_KIND.find(k=>k[0]===d.kind)||[])[1]||'')}${d.date?' · '+esc(fmtD(d.date)):''}</span></div></a>`).join('')}</div>`;
+ return `<div class="gelgrid">${ds.map(d=>`<a class="gelcard" href="#geles/${esc(d._id)}">${d.thumb?`<img src="${esc(d.thumb)}" alt="" loading="lazy">`:'<div class="gelph"></div>'}<div class="gelcard-b"><b>${esc(d.title||'Sin título')}</b><span class="small mute">${esc((GEL_KIND.find(k=>k[0]===d.kind)||[])[1]||'')}${d.date?' · '+esc(fmtD(d.date)):''}</span>${d.exp&&S.data.experiments.get(d.exp)?`<span class="small mute">${esc(S.data.experiments.get(d.exp).code)}</span>`:''}</div></a>`).join('')}</div>`;
 }
 function gelEdBody(){
  lazySub('gels');lazySub('gelimgs');
@@ -2777,6 +2817,7 @@ function gelEdBody(){
    <div class="fld"><label class="lbl req" for="gel-title">Título</label><input id="gel-title" data-gelk="title" value="${esc(G.title)}" placeholder="Purificación de Tse1"></div>
    <div class="fld half"><label class="lbl" for="gel-kind">Tipo de gel</label><select id="gel-kind" data-gelsel="kind">${GEL_KIND.map(([k,l])=>`<option value="${k}"${G.kind===k?' selected':''}>${esc(l)}</option>`).join('')}</select></div>
    <div class="fld half"><label class="lbl" for="gel-date">Fecha</label><input id="gel-date" data-gelk="date" type="date" value="${esc(G.date||'')}"></div>
+   <div class="fld"><label class="lbl" for="gel-exp">Experimento</label><select id="gel-exp" data-gelsel="exp"><option value="">Sin asignar</option>${[...S.data.experiments.values()].sort((a,b)=>natCmp(b.code,a.code)).map(x=>`<option value="${esc(x._id)}"${G.exp===x._id?' selected':''}>${esc(x.code)} · ${esc(x.name)}</option>`).join('')}</select></div>
    <div class="fld"><label class="lbl" for="gel-notes">Notas</label><textarea id="gel-notes" data-gelk="notes" rows="2" placeholder="Condiciones, tampón, tiempo…">${esc(G.notes||'')}</textarea></div>
   </div></section>
   <section class="card"><details open><summary>Imagen</summary><div class="form" style="margin-top:10px">
@@ -2831,7 +2872,8 @@ const VIEWS={
  tesis:{shell:thesisShell,body:thesisBody,deps:['theses','milestones','members']},
  'mi-espacio':{shell:meShell,body:meBody,deps:['personal','strains','plasmids','oligos','reagents']},
  importar:{shell:impShell,body:impBody,deps:['members']},
- geles:{shell:gelShell,body:gelBody,after:gelAfter,deps:['gels','strains','plasmids'],needsData:false},
+ experimentos:{shell:()=>listShell('experiments'),body:()=>listBody('experiments'),deps:'*'},
+ geles:{shell:gelShell,body:gelBody,after:gelAfter,deps:['gels','strains','plasmids','experiments'],needsData:false},
  calculadoras:{shell:calcShell,body:calcBody,deps:['oligos','reagents','meta','plasmids'],needsData:false},
  ajustes:{shell:setShell,body:setBody,deps:['members','strains','plasmids','oligos','reagents','boxes','protocols']}
 };
@@ -2906,8 +2948,9 @@ document.addEventListener('click',async e=>{
   case 'set-save':{const e1=$('#set-err');try{const r=await saveMember($('#set-prefix').value,$('#set-role').value,$('#set-name').value);e1.textContent=r||'';if(!r)toast('Perfil guardado')}catch(er){e1.textContent=writeErr(er)}break}
   /* calculators */
   /* geles */
+  case 'gel-forexp':{S.gelPreExp=el.dataset.id;closeDrawer();location.hash='geles';setTimeout(()=>{const i=$('#gel-file-new');i&&i.click()},120);break}
   case 'gel-click':gelClick(e);break;
-  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'gels', 'gelimgs']",'Lista copiada');break;
+  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'experiments', 'gels', 'gelimgs',\n 'chroms', 'seqruns', 'preps']",'Lista copiada');break;
   case 'gel-save':gelSave();break;
   case 'gel-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}gelDelete();break;
   case 'gel-export':gelExport(+el.dataset.v||1);break;
@@ -2958,7 +3001,7 @@ document.addEventListener('input',e=>{
  if(t.id==='f-seq'){$('#seqstats').innerHTML=seqStatsHTML(t.value);return}
  if(t.classList.contains('cl-filter')){const q=norm(t.value);$$('label',t.nextElementSibling).forEach(l=>l.hidden=!!q&&!l.dataset.q.includes(q));return}
  if(t.id==='imp-paste'){impState().raw=t.value;return}
-  if(t.id==='gel-file'||t.id==='gel-file-new'){const f=t.files&&t.files[0];if(!f)return;if(t.id==='gel-file-new'){S.gel={_new:true,...gelDef(),img:null,w:0,h:0};S.gelImgDirty=true;location.hash='geles/nuevo';setTimeout(()=>gelPickFile(f),60)}else{S.gelImgDirty=true;gelPickFile(f)}return}
+  if(t.id==='gel-file'||t.id==='gel-file-new'){const f=t.files&&t.files[0];if(!f)return;if(t.id==='gel-file-new'){S.gel={_new:true,...gelDef(),exp:S.gelPreExp||'',img:null,w:0,h:0};S.gelPreExp='';S.gelImgDirty=true;location.hash='geles/nuevo';setTimeout(()=>gelPickFile(f),60)}else{S.gelImgDirty=true;gelPickFile(f)}return}
   if(t.dataset.gelk){S.gel[t.dataset.gelk]=t.value;if(t.dataset.gelk==='title')gelPaint();return}
   if(t.dataset.gelk2){const[a,b]=t.dataset.gelk2.split('.');S.gel[a][b]=t.value;gelPaint();return}
   if(t.dataset.gelmk){const i=+t.dataset.i;if(S.gel.mk.items[i]){S.gel.mk.items[i].v=t.value;gelPaint()}return}
