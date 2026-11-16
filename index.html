@@ -453,6 +453,29 @@ main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
 @media (max-width:420px){.bgrid{grid-template-columns:minmax(0,1fr)}}
 .unit select{width:auto;flex:none;padding:.5rem .4rem;font-size:.85rem}
 .ctbl td.bad-c{color:var(--bad);font-size:.82rem}
+.rulebox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:.8rem;overflow-x:auto;white-space:pre;color:var(--fg-2)}
+.gel{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:980px){.gel{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:981px){.gelview{position:sticky;top:76px}}
+.gelview{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.gelcanvas{min-height:120px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border-radius:var(--r-sm);overflow:hidden;cursor:crosshair}
+.gelcanvas canvas{max-width:100%;border-radius:2px}
+.gelgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gelcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column}
+.gelcard:hover{border-color:var(--line-2)}
+.gelcard img,.gelph{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--surface-2);display:block}
+.gelcard-b{padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.gelcard-b b{font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lanegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.lanein{display:flex;align-items:center;gap:5px}
+.lanein span{font-size:.72rem;color:var(--fg-3);font-family:var(--f-mono);min-width:1.2em;text-align:right}
+.lanein input{padding:.32rem .4rem;font-size:.84rem;min-width:0}
+.mkrows{display:flex;flex-direction:column;gap:6px}
+.mkrow{display:flex;align-items:center;gap:8px}
+.mkrow input{flex:1;padding:.35rem .45rem;font-size:.86rem;font-family:var(--f-mono)}
+input[type=range]{width:100%;accent-color:var(--accent);height:1.4rem;padding:0;background:transparent;border:0}
+.codseq{word-break:break-all;line-height:1.7;max-height:260px;overflow:auto}
+.codseq .chg{color:var(--accent);font-weight:600}
 .pdp{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
 .pdp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .pdp .seqbox{background:var(--surface);word-break:break-all}
@@ -529,7 +552,8 @@ const IC={
  ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
  note:'<path d="M5 3h14v18H5z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
  calc:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8.5 11.5h0M12 11.5h0M15.5 11.5h0M8.5 15h0M12 15h0M15.5 15h0M8.5 18h0M12 18h0M15.5 18h0" stroke-width="2.4"/>',
- pcr:'<path d="M4 18c3 0 3-12 6-12s3 12 6 12 2-6 4-6"/><path d="M3 21h18"/>'
+ pcr:'<path d="M4 18c3 0 3-12 6-12s3 12 6 12 2-6 4-6"/><path d="M3 21h18"/>',
+ gel:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M12 3v18M16 3v18"/><path d="M5.5 8h3M9.5 11h3M13.5 8h3M5.5 14h3M13.5 15h3" stroke-width="2.2"/>'
 };
 const ic=(n,c='')=>`<svg class="ico ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]||''}</svg>`;
 
@@ -663,6 +687,7 @@ const COLLS=['strains','plasmids','oligos','reagents','protocols','boxes','these
 const S={mode:'loading',uid:null,canWrite:true,names:{},colors:{},route:'inicio',filters:{},data:{},got:new Set(),detail:null,boxSel:null,boxHi:null,meTab:'tareas',imp:null,slow:false,err:null,onboardAsked:false,protoQ:'',gsIdx:0};
 COLLS.forEach(c=>S.data[c]=new Map());
 S.data.personal=new Map();
+S.data.gels=new Map();S.data.gelimgs=new Map();
 let DB=null,USER=null,DL=null;
 
 /* ---------- store (shared db, or in-memory preview) ---------- */
@@ -675,6 +700,7 @@ const store={
  },
  async set(path,id,data){const body=clean(data);if(DB)return DB.collection(path).doc(id).set(body);(mem[path]=mem[path]||new Map()).set(id,{...body,_id:id});memEmit(path)},
  async del(path,id){if(DB)return DB.collection(path).doc(id).delete();mem[path]&&mem[path].delete(id);memEmit(path)},
+async get(path,id){if(DB){const d=await DB.collection(path).doc(id).get();return d.exists?{...d.data(),_id:d.id}:null}return (mem[path]&&mem[path].get(id))||null},
  newId(path){if(DB)return DB.collection(path).doc().id;return 'm'+Math.random().toString(36).slice(2,12)}
 };
 function pcoll(){return S.uid?(DB?`data/users/${S.uid}`:'personal'):null}
@@ -770,6 +796,7 @@ const NAV=[
  {r:'protocolos',l:'Protocolos',i:'protocol',t:'protocols'},{r:'tesis',l:'Tesis',i:'thesis',t:'theses'},
  {g:'Herramientas'},
  {r:'calculadoras',l:'Calculadoras',i:'calc'},
+ {r:'geles',l:'Geles',i:'gel'},
  {g:'Personal'},
  {r:'mi-espacio',l:'Mi espacio',i:'me'},{r:'importar',l:'Importar',i:'import'},{r:'ajustes',l:'Ajustes',i:'settings'}
 ];
@@ -1052,7 +1079,10 @@ function setBody(){
    <div class="fld half"><label class="lbl" for="set-role">Papel en el grupo</label><select id="set-role">${ROLES.map(r=>`<option${m.role===r?' selected':''}>${r}</option>`).join('')}</select></div></div>
    <p class="small mute">Tus códigos: <span class="mono">${esc(pre)}-001</span> (cepas), <span class="mono">p${esc(pre)}-001</span> (plásmidos), <span class="mono">o${esc(pre)}-001</span> (oligos). Los reactivos usan una numeración común, <span class="mono">R-001</span>.</p>
    <p class="ferr" id="set-err"></p>${S.canWrite?`<div class="vacts"><button class="btn primary" data-a="set-save">Guardar perfil</button></div>`:''}</section>`:''}
-  <section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
+  <section class="card"><h2>Reglas de Firebase para los geles</h2>
+  <p class="small mute">Los geles se guardan en dos colecciones nuevas. Si al guardar uno sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y añade estas dos líneas junto a las de las demás colecciones. Donde pone los puntos suspensivos, copia la misma condición que ya tiene la línea de <span class="mono">/strains</span>.</p>
+  <pre class="rulebox mono">match /gels/{id}     { allow read, write: if ...; }\nmatch /gelimgs/{id}  { allow read, write: if ...; }</pre>
+  <button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar las dos líneas</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
    <p class="small mute" style="margin-top:10px">Para sumar a alguien, añade su correo a la lista de acceso (consola de Firebase → Firestore Database → Reglas) y pásale la dirección de la web. Aparecerá aquí cuando entre por primera vez.</p></section>
  </div><div class="stack">
   <section class="card stack"><h2>Exportar</h2><p class="small mute">CSV con punto y coma, listo para abrir en Excel. Caja y posición van en columnas separadas, así que se puede volver a importar.</p><div class="vacts">${TK.map(t=>`<button class="btn sm" data-a="export" data-type="${t}">${ic('download')}${T[t].label}</button>`).join('')}</div><div class="vacts"><button class="btn sm" data-a="backup-json">${ic('download')}Copia completa (JSON)</button></div></section>
@@ -1399,7 +1429,7 @@ function addMenu(){
  if(!S.canWrite){toast('Tienes acceso de solo lectura.');return}
  openSheet('Añadir',TK.map(t=>`<button data-a="new" data-type="${t}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo}</button>`).join('')+`<button data-a="new-box">${ic('freezer')}Nueva caja</button><button data-a="proto-new">${ic('protocol')}Nuevo protocolo</button>${S.uid?`<button data-a="note-new">${ic('note')}Nota privada</button>`:''}<a href="#importar">${ic('import')}Importar una lista</a>`);
 }
-function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['calculadoras','Calculadoras','calc'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
+function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['calculadoras','Calculadoras','calc'],['geles','Geles','gel'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
 function cellMenu(box,pos){
  if(!S.canWrite)return;const b=S.data.boxes.get(box);
  openSheet(`${b?b.name:'Caja'} · ${pos}`,['strains','plasmids','oligos'].map(t=>`<button data-a="new-at" data-type="${t}" data-box="${box}" data-pos="${pos}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo} aquí</button>`).join(''));
@@ -1411,6 +1441,7 @@ const CALCS=[
  {id:'a280',t:'Proteína por A280',i:'reagent',d:'Concentración de proteína a partir de la absorbancia, con ε y peso molecular calculados desde la secuencia. Pureza por A260/A280 y dilución a la concentración que necesites.'},
  {id:'protparam',t:'Parámetros de proteína',i:'reagent',d:'Peso molecular, pI, carga a tu pH, ε, inestabilidad y composición, como ProtParam. Detecta etiquetas y sitios de proteasa y te dice qué columna de intercambio iónico usar.'},
  {id:'cebadores',t:'Diseño de cebadores',i:'oligo',d:'Cebadores para una región, con la Tm por vecinos próximos y colas para Golden Gate, Gibson o restricción. Avisa de dímeros, horquillas y sitios internos.'},
+ {id:'codones',t:'Optimización de codones',i:'strain',d:'Reescribe un gen con los codones de E. coli, B. subtilis o P. putida KT2440, o solo lo domestica quitando sitios de BsaI y BsmBI. Da el CAI y el GC.'},
  {id:'ensamblaje',t:'Ensamblaje de plásmidos',i:'plasmid',d:'Cuánto vector y cuánto inserto poner, en fmol: ligación clásica, Golden Standard, SubtiToolKit y Gibson, con su mezcla y su programa.'},
  {id:'tampones',t:'Tampones y disoluciones',i:'reagent',d:'Cuánto pesar o pipetear de cada componente, desde stocks o sólidos. Recetas habituales (PBS, TAE, His-tag, M9, LB) y recetas propias del grupo.'}
 ];
@@ -1431,6 +1462,7 @@ function calcBody(){
  if(S.sub==='protparam')return ppHTML();
  if(S.sub==='ensamblaje')return asmHTML();
  if(S.sub==='cebadores')return pdHTML();
+ if(S.sub==='codones')return codHTML();
  return `<div class="cgrid">${CALCS.map(c=>`<a class="ccard" href="#calculadoras/${c.id}"><h3>${ic(c.i)}${esc(c.t)}</h3><p>${esc(c.d)}</p></a>`).join('')}</div>`;
 }
 
@@ -2201,6 +2233,186 @@ async function pdSaveOligos(){
  }catch(e){toast(writeErr(e))}
 }
 
+
+/* --- Optimización de codones --- */
+/* Tablas de uso de codones de la base de datos de Kazusa (www.kazusa.or.jp/codon) */
+const COD_ORDER='TTTTTCTTATTGCTTCTCCTACTGATTATCATAATGGTTGTCGTAGTGTCTTCCTCATCGCCTCCCCCACCGACTACCACAACGGCTGCCGCAGCGTATTACTAATAGCATCACCAACAGAATAACAAAAAGGATGACGAAGAGTGTTGCTGATGGCGTCGCCGACGGAGTAGCAGAAGGGGTGGCGGAGGG';
+const COD_GEN='FFLLLLLLIIIMVVVVSSSSPPPPTTTTAAAAYY**HHQQNNKKDDEECC*WRRRRSSRRGGGG';
+const COD_ECOLI=[22.2,16.5,13.8,13.6,11,11.1,3.8,53.1,30.4,25.2,4.2,27.8,18.2,15.3,10.9,26.3,8.4,8.6,7,8.9,7,5.5,8.4,23.4,8.8,23.5,6.9,14.4,15.2,25.7,20.1,33.9,16.1,12.2,2,0.2,13,9.8,15.4,29,17.6,21.6,33.6,10.3,32.2,19.1,39.7,18,5.1,6.4,0.9,15.2,21,22.3,3.5,5.4,8.7,16.1,2,1.1,24.7,29.8,7.9,11];
+const COD_BSUB=[30,14.3,19.8,15.8,21.8,10.7,4.9,23,36.2,27.2,9.8,26.3,18.6,17.3,13,17.3,12.7,8.3,14.6,6.5,10.6,3.5,7.1,16.3,8.7,9,21.6,14.9,18.6,16.5,21.1,19.8,23.3,12.6,1.9,0.5,15.7,7.5,20.4,18.5,22.9,17.8,48.4,20.8,33.2,19,48.1,22.6,3.6,4.3,0.8,10.7,7.2,8.2,4.3,6.9,6.8,14.4,10.5,4.1,13,23.3,21.8,11.2];
+const COD_PPUT=[7.3,28.2,1.5,16.4,7.3,14.9,2.7,71.6,9.7,34.4,2.1,23.1,7.5,21.4,7.5,36.2,2.7,8.7,3,13.9,6,11.4,7.1,24.3,4.7,31,3.6,8.9,12.1,56.7,13.7,28.3,7.2,18.3,0.7,0.4,8.1,15.5,10.9,35.1,6.7,23.3,9.9,24.5,16.6,36.5,27.1,29.6,2.1,8.6,2,14.4,12.7,36,3.4,10.3,5.2,23.1,1.2,2.3,16.4,48.9,3.3,11.7];
+const COD_ORG={
+ ecoli:{l:'E. coli',full:'Escherichia coli W3110 (K-12)',n:'4.332 genes · 1.372.057 codones',f:COD_ECOLI},
+ bsub:{l:'B. subtilis',full:'Bacillus subtilis',n:'2.529 genes · 815.445 codones',f:COD_BSUB},
+ pput:{l:'P. putida',full:'Pseudomonas putida KT2440',n:'6.891 genes · 2.266.762 codones',f:COD_PPUT}
+};
+const COD_LIST=[];for(let i=0;i<64;i++)COD_LIST.push(COD_ORDER.slice(i*3,i*3+3));
+const COD_AA={};COD_LIST.forEach((c,i)=>COD_AA[c]=COD_GEN[i]);
+const COD_CACHE={};
+function codTbl(org){
+ if(COD_CACHE[org])return COD_CACHE[org];
+ const f=COD_ORG[org].f,byAA={},rel={},w={};
+ COD_LIST.forEach((c,i)=>{(byAA[COD_AA[c]]=byAA[COD_AA[c]]||[]).push(c)});
+ for(const a in byAA){const lst=byAA[a];const tot=lst.reduce((x,c)=>x+f[COD_LIST.indexOf(c)],0);
+  const mx=Math.max(...lst.map(c=>f[COD_LIST.indexOf(c)]));
+  lst.forEach(c=>{const v=f[COD_LIST.indexOf(c)];rel[c]=tot?v/tot:0;w[c]=mx?v/mx:0});
+  lst.sort((x,y)=>rel[y]-rel[x]);}
+ return COD_CACHE[org]={byAA,rel,w,stop:byAA['*'][0]};
+}
+const COD_SITES=[['BsaI','GGTCTC'],['BsmBI (Esp3I)','CGTCTC'],['BpiI (BbsI)','GAAGAC'],['NotI','GCGGCCGC'],['EcoRI','GAATTC'],['XbaI','TCTAGA']];
+function codRng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function codTranslate(dna){let aa='';for(let i=0;i+2<dna.length;i+=3)aa+=COD_AA[dna.slice(i,i+3)]||'X';return aa}
+function codGC(s){let g=0;for(const c of s)if(c==='G'||c==='C')g++;return s.length?g/s.length*100:0}
+function codGC3(dna){let g=0,n=0;for(let i=2;i<dna.length;i+=3){n++;const c=dna[i];if(c==='G'||c==='C')g++}return n?g/n*100:0}
+function codCAI(dna,org){const T=codTbl(org);let sum=0,n=0;
+ for(let i=0;i+2<dna.length;i+=3){const c=dna.slice(i,i+3),a=COD_AA[c];if(!a||a==='*'||a==='M'||a==='W')continue;const v=T.w[c];if(!v)continue;sum+=Math.log(v);n++}
+ return n?Math.exp(sum/n):null}
+function codBad(dna,sites,runs){
+ const hits=[];
+ for(const [nm,q] of sites){const r=revcomp(q).toUpperCase();
+  for(const pat of (q===r?[q]:[q,r])){let i=dna.indexOf(pat);while(i>=0){hits.push({i,len:pat.length,l:nm});i=dna.indexOf(pat,i+1)}}}
+ if(runs){const re=/([ACGT])\1{5,}/g;let m;while((m=re.exec(dna))){hits.push({i:m.index,len:m[0].length,l:`${m[0].length} ${m[1]} seguidas`})}}
+ return hits;
+}
+function codFix(codons,org,sites,runs,rng){
+ const T=codTbl(org);let changed=0,left=0;
+ for(let pass=0;pass<14;pass++){
+  const dna=codons.join('');const hits=codBad(dna,sites,runs);
+  if(!hits.length){left=0;break}
+  left=hits.length;let did=false;
+  for(const h of hits){
+   const c0=Math.floor(h.i/3),c1=Math.floor((h.i+h.len-1)/3);
+   const idx=[];for(let k=c0;k<=c1;k++)idx.push(k);
+   idx.sort(()=>rng()-0.5);
+   for(const k of idx){
+    const cur=codons[k],aa=COD_AA[cur];if(!aa||aa==='X')continue;
+    const alts=T.byAA[aa].filter(x=>x!==cur&&T.rel[x]>=0.08);
+    let best=null;
+    for(const alt of alts){const save=codons[k];codons[k]=alt;
+     const sub=codons.slice(Math.max(0,k-4),k+5).join('');
+     const n=codBad(sub,sites,runs).length;codons[k]=save;
+     if(best==null||n<best.n||(n===best.n&&T.rel[alt]>T.rel[best.alt]))best={alt,n};}
+    const before=codBad(codons.slice(Math.max(0,k-4),k+5).join(''),sites,runs).length;
+    if(best&&best.n<before){codons[k]=best.alt;changed++;did=true;break}
+   }
+   if(did)break;
+  }
+  if(!did)break;
+ }
+ return {changed,left:codBad(codons.join(''),sites,runs)};
+}
+function codState(){if(S.cod)return S.cod;S.cod={name:'',seq:'',org:'ecoli',mode:'opt',strat:'prop',thr:'10',runs:true,sites:['BsaI','BsmBI (Esp3I)'],extra:'',seed:1,...(lsGet('calc.cod')||{})};return S.cod}
+function codSave(){lsSet('calc.cod',S.cod)}
+function codSites(){const C=codState();const out=COD_SITES.filter(x=>C.sites.includes(x[0]));
+ String(C.extra||'').split(/[,;\s]+/).filter(Boolean).forEach(x=>{const q=String(x).toUpperCase().replace(/[^ACGT]/g,'');if(q.length>=4)out.push(['«'+q+'»',q])});
+ return out}
+function codCalc(){
+ const C=codState(),o={warn:[],info:[],err:null};
+ const raw=String(C.seq||'').split(/\r?\n/).filter(l=>!/^\s*>/.test(l)).join('').toUpperCase().replace(/\s|\d/g,'');
+ if(!raw){o.err='Pega la secuencia del gen o de la proteína.';return o}
+ const clean=raw.replace(/[^A-Z*]/g,'');
+ const isDNA=/^[ACGT]+$/.test(clean)&&clean.length>=30;
+ o.isDNA=isDNA;
+ let aa,orig=null;
+ if(isDNA){
+  if(clean.length%3){o.err=`La secuencia tiene ${clean.length} nt, que no es múltiplo de 3. Comprueba que has pegado la pauta completa.`;return o}
+  orig=clean;aa=codTranslate(clean);
+  const st=aa.indexOf('*');
+  if(st>=0&&st<aa.length-1)o.warn.push(`Hay un codón de parada en el aminoácido ${st+1}, antes del final. Comprueba la pauta de lectura.`);
+  if(aa[0]!=='M')o.warn.push('La secuencia no empieza por ATG.');
+ }else{
+  aa=clean.replace(/[^ACDEFGHIKLMNPQRSTVWY*]/g,'');
+  const bad=[...new Set([...clean].filter(c=>!/[ACDEFGHIKLMNPQRSTVWY*]/.test(c)))];
+  if(bad.length)o.warn.push(`Se han ignorado caracteres que no son aminoácidos: ${bad.join(' ')}.`);
+  if(!aa){o.err='No se reconoce la secuencia.';return o}
+  if(C.mode==='dom')o.warn.push('Has pegado una proteína: no hay nada que domesticar, así que se optimiza entera.');
+ }
+ o.aa=aa;o.orig=orig;
+ const T=codTbl(C.org),sites=codSites(),rng=codRng((numV(C.seed)||1)*2654435761);
+ const thr=Math.max(0,Math.min(50,numV(C.thr)??10))/100;
+ let codons;
+ const dom=C.mode==='dom'&&isDNA;
+ if(dom){codons=[];for(let i=0;i<orig.length;i+=3)codons.push(orig.slice(i,i+3))}
+ else{
+  codons=[...aa].map(a=>{
+   if(a==='*')return T.stop;
+   const lst=T.byAA[a];if(!lst)return 'NNN';
+   const ok=lst.filter(c=>T.rel[c]>=thr);const pool=ok.length?ok:[lst[0]];
+   if(C.strat==='max')return pool[0];
+   const tot=pool.reduce((x,c)=>x+T.rel[c],0);let r=rng()*tot;
+   for(const c of pool){r-=T.rel[c];if(r<=0)return c}
+   return pool[0];
+  });
+ }
+ const before=codBad(codons.join(''),sites,C.runs);
+ const fix=codFix(codons,C.org,sites,C.runs,rng);
+ o.out=codons.join('');o.fixed=fix.changed;o.sitesBefore=before.length;o.left=fix.left;
+ if(fix.left.length)o.warn.push(`No se han podido quitar ${fix.left.length} sitio${fix.left.length>1?'s':''}: ${[...new Set(fix.left.map(h=>h.l))].join(', ')}. Mira si el aminoácido no deja alternativas; habría que cambiar la proteína.`);
+ o.cai=codCAI(o.out,C.org);o.gc=codGC(o.out);o.gc3=codGC3(o.out);
+ if(orig){o.caiOrig=codCAI(orig,C.org);o.gcOrig=codGC(orig);o.gc3Orig=codGC3(orig);
+  let ch=0;for(let i=0;i<codons.length;i++)if(codons[i]!==orig.slice(i*3,i*3+3))ch++;
+  o.changed=ch;o.sitesOrig=codBad(orig,sites,C.runs);
+  if(codTranslate(o.out).replace(/\*$/,'')!==aa.replace(/\*$/,'')){o.err='Error interno: la proteína resultante no coincide con la original.';return o}}
+ if(o.gc<35||o.gc>65)o.warn.push(`El resultado tiene un ${fmtN(o.gc,0)} % de GC. Fuera del 35–65 % la síntesis puede salir más cara o dar problemas.`);
+ if(dom)o.info.push('Modo domesticar: solo se cambian los codones imprescindibles para quitar los sitios; el resto se queda como estaba.');
+ else o.info.push(C.strat==='max'?'Cada aminoácido lleva su codón más usado. Es lo más simple, pero repite mucho el mismo codón y puede agotar los ARNt.':'Los codones se reparten según su uso real en el organismo, descartando los que bajan del umbral. Es más parecido a un gen natural que poner siempre el más frecuente.');
+ o.info.push('El CAI va de 0 a 1 y mide cuánto se parece el uso de codones al del organismo. Por encima de 0,8 se considera bien adaptado.');
+ return o;
+}
+function codHTML(){
+ const C=codState();
+ return `<div class="calc"><div class="stack">
+ <section class="card"><h2>Secuencia</h2><div class="form">
+  <div class="fld"><label class="lbl" for="cod-name">Nombre</label><input id="cod-name" data-codk="name" value="${esc(C.name)}" placeholder="tse1"></div>
+  <div class="fld"><label class="lbl" for="cod-seq">Gen o proteína</label><textarea id="cod-seq" data-codk="seq" rows="7" class="seqarea" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="ATGAGCAAAGGA… o MSKGEELFTG… (vale FASTA)">${esc(C.seq)}</textarea><span class="help">Se detecta solo si es ADN o proteína.</span></div>
+ </div></section>
+ <section class="card"><h2>Organismo</h2>
+  <div class="seg" role="group" aria-label="Organismo">${Object.entries(COD_ORG).map(([k,v])=>`<button data-a="cod-org" data-v="${k}" aria-pressed="${C.org===k}"><i>${esc(v.l)}</i></button>`).join('')}</div>
+  <p class="small mute">${esc(COD_ORG[C.org].full)} · ${esc(COD_ORG[C.org].n)}. Tabla de Kazusa.</p>
+ </section>
+ <section class="card"><h2>Qué hacer</h2>
+  <div class="seg" role="group" aria-label="Modo">${[['opt','Optimizar entero'],['dom','Solo domesticar']].map(([k,l])=>`<button data-a="cod-mode" data-v="${k}" aria-pressed="${C.mode===k}">${l}</button>`).join('')}</div>
+  <p class="small mute">${C.mode==='dom'?'Mantiene tu secuencia y solo cambia los codones que crean sitios de restricción o repeticiones. Es lo que necesitas para meter una pieza en Golden Gate.':'Reescribe el gen entero con los codones del organismo.'}</p>
+  ${C.mode==='opt'?`<div class="form"><div class="fld"><span class="lbl">Cómo elegir los codones</span><div class="seg">${[['prop','Según su uso real'],['max','Siempre el más usado']].map(([k,l])=>`<button data-a="cod-strat" data-v="${k}" aria-pressed="${C.strat===k}">${l}</button>`).join('')}</div></div>
+  ${C.strat==='prop'?`<div class="fld half"><label class="lbl" for="cod-thr">Descartar codones por debajo de</label><div class="unit"><input id="cod-thr" data-codk="thr" type="number" step="1" min="0" max="50" inputmode="numeric" value="${esc(C.thr)}"><span>% de uso</span></div></div>`:''}</div>`:''}
+ </section>
+ <section class="card"><h2>Qué evitar</h2>
+  <div class="chips">${COD_SITES.map(([n,q])=>`<label class="chip${C.sites.includes(n)?' on':''}"><input type="checkbox" data-codsite="${esc(n)}"${C.sites.includes(n)?' checked':''}> ${esc(n)} <span class="mono small">${esc(q)}</span></label>`).join('')}</div>
+  <div class="form">
+   <div class="fld"><label class="lbl" for="cod-extra">Otras secuencias</label><input id="cod-extra" data-codk="extra" class="mono" value="${esc(C.extra)}" placeholder="GGATCC, AAGCTT"><span class="help">Separadas por comas. Se buscan en las dos hebras.</span></div>
+   <div class="fld"><label class="switch"><input type="checkbox" data-codchk="runs"${C.runs?' checked':''}> Evitar 6 o más bases iguales seguidas</label></div>
+  </div>
+ </section>
+ </div><div class="calc-out" id="calc-out">${codOutHTML()}</div></div>`;
+}
+function codFasta(){const C=codState(),r=codCalc();if(r.err)return r.err;
+ const nm=(C.name||'secuencia')+'_'+C.org;const L=['>'+nm+' | '+COD_ORG[C.org].full+(r.cai?' | CAI '+fmtN(r.cai,2):'')];
+ for(let i=0;i<r.out.length;i+=60)L.push(r.out.slice(i,i+60));return L.join('\n')}
+function codOutHTML(){
+ const C=codState(),r=codCalc();
+ if(r.err)return `<section class="card"><p class="${r.out?'hint bad':'mute small'}">${esc(r.err)}</p></section>`;
+ const hints=[...r.warn.map(t=>`<p class="hint warn">${esc(t)}</p>`),...r.info.map(t=>`<p class="hint">${esc(t)}</p>`)].join('');
+ const dom=C.mode==='dom'&&r.isDNA;
+ let seqH;
+ if(r.orig&&r.out.length<=4500){const parts=[];for(let i=0;i<r.out.length;i+=3){const c=r.out.slice(i,i+3);parts.push(c!==r.orig.slice(i,i+3)?`<b class="chg">${c}</b>`:c)}seqH=parts.join('');}
+ else seqH=esc(r.out);
+ const sitesOrig=r.orig?r.sitesOrig:null;
+ return `<section class="card"><h2>${esc(C.name||'Secuencia')} · ${esc(COD_ORG[C.org].l)}</h2>
+  <div class="cstats">
+   <div class="cstat"><b>${fmtN(r.cai,2)}</b><span>CAI${r.caiOrig!=null?` (antes ${fmtN(r.caiOrig,2)})`:''}</span></div>
+   <div class="cstat"><b>${fmtN(r.gc,1)} %</b><span>GC${r.gcOrig!=null?` (antes ${fmtN(r.gcOrig,1)} %)`:''}</span></div>
+   <div class="cstat"><b>${fmtN(r.gc3,1)} %</b><span>GC en 3ª posición</span></div>
+   ${r.changed!=null?`<div class="cstat"><b>${r.changed.toLocaleString('es-ES')}</b><span>de ${(r.out.length/3).toLocaleString('es-ES')} codones cambiados</span></div>`:`<div class="cstat"><b>${(r.out.length/3).toLocaleString('es-ES')}</b><span>codones · ${r.out.length.toLocaleString('es-ES')} nt</span></div>`}
+  </div>
+  ${sitesOrig?`<p class="small" style="color:var(--fg-2)">${sitesOrig.length?`En tu secuencia había <b>${sitesOrig.length}</b> sitio${sitesOrig.length>1?'s':''} que evitar (${[...new Set(sitesOrig.map(h=>h.l))].join(', ')}). ${r.left.length?`Quedan ${r.left.length}.`:'Ya no queda ninguno.'}`:'Tu secuencia no tenía ninguno de los sitios marcados.'}</p>`:''}
+  <div class="seqbox mono small codseq">${seqH}</div>
+  <div class="vacts"><button class="btn" data-a="cod-copy">${ic('copy')}Copiar secuencia</button><button class="btn" data-a="cod-fasta">${ic('copy')}Copiar en FASTA</button>${dom||C.strat==='max'?'':`<button class="btn" data-a="cod-again">${ic('swap')}Otra versión</button>`}</div>
+  ${hints?`<div class="hints">${hints}</div>`:''}
+ </section>
+ <p class="small mute">Tablas de uso de codones de la base de datos de Kazusa. El CAI se calcula como Sharp y Li (1987), sin contar Met, Trp ni el codón de parada. Comprueba siempre la secuencia antes de mandarla a sintetizar.</p>`;
+}
+function codRefresh(){const o=$('#calc-out');if(o)o.innerHTML=codOutHTML()}
+
 /* --- Tampones y disoluciones --- */
 /* Unidades: dim m = molar (base µM), w = masa/volumen (base g/L), v = % v/v, x = veces */
 const BU={M:{d:'m',f:1e6},mM:{d:'m',f:1e3},'µM':{d:'m',f:1},nM:{d:'m',f:1e-3},'g/L':{d:'w',f:1},'mg/mL':{d:'w',f:1},'µg/mL':{d:'w',f:1e-3},'% p/v':{d:'w',f:10},'% v/v':{d:'v',f:1},X:{d:'x',f:1}};
@@ -2357,6 +2569,257 @@ async function bufUnstore(){
  try{await store.set('meta','buffers',{recipes:cur.filter(g=>g.id!==ex.id)});toast('Receta borrada')}catch(e){toast(writeErr(e))}
 }
 
+/* --- Geles --- */
+const LAZY={};
+function lazySub(c){if(LAZY[c])return;LAZY[c]=1;store.sub(c,m=>{S.data[c]=m;S.got.add(c);dirty(c)})}
+const GEL_KIND=[['agarosa','Agarosa (ADN)'],['page','Poliacrilamida (proteína)']];
+const GEL_UNIT={agarosa:'pb',page:'kDa'};
+const gelDef=()=>({title:'',kind:'agarosa',date:new Date().toISOString().slice(0,10),notes:'',strains:[],plasmids:[],
+ adj:{rot:0,cl:0,cr:0,ct:0,cb:0,bright:100,contrast:100,invert:false,gray:true},
+ lanes:{n:8,x0:0.08,x1:0.92,angle:0,show:true,labels:[]},
+ mk:{unit:'pb',show:true,items:[]},
+ style:{bg:'white',fs:100,panel:'',title:true}});
+function gelState(){if(S.gel)return S.gel;S.gel=null;return null}
+function gelOpen(id){
+ if(id==='nuevo'){S.gel={_new:true,...gelDef(),img:null,w:0,h:0};S.gelImg=null;return}
+ const d=S.data.gels.get(id);if(!d)return;
+ S.gel=JSON.parse(JSON.stringify({...gelDef(),...clean(d),_id:id}));S.gelImg=null;S.gelBusy=true;
+ store.get('gelimgs',id).then(x=>{S.gelBusy=false;if(x&&x.img){S.gel.img=x.img;gelLoadImg()}else{S.gelErr='No se ha podido cargar la imagen original.';dirty('gels')}}).catch(()=>{S.gelBusy=false;S.gelErr='No se ha podido cargar la imagen original.';dirty('gels')});
+}
+let GIMG=null;
+function gelLoadImg(){
+ const G=S.gel;if(!G||!G.img){GIMG=null;gelPaint();return}
+ const im=new Image();im.onload=()=>{GIMG=im;if(!G.w){G.w=im.naturalWidth;G.h=im.naturalHeight}gelPaint()};im.onerror=()=>{GIMG=null;gelPaint()};im.src=G.img;
+}
+async function gelPickFile(file){
+ if(!file)return;
+ if(!/^image\//.test(file.type)){toast('Eso no es una imagen.');return}
+ try{
+  const url=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)});
+  const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const G=S.gel;const r=gelShrink(im,2000,0.9,900000);
+  G.img=r.url;G.w=r.w;G.h=r.h;G.thumb=gelShrink(im,320,0.7,60000).url;
+  if(!G.title)G.title=file.name.replace(/\.[a-z]+$/i,'').slice(0,80);
+  gelLoadImg();_renderBody();
+  if(r.big)toast('La foto se ha reducido para que quepa en la base de datos.');
+ }catch(e){toast('No se ha podido leer la imagen.')}
+}
+function gelShrink(im,max,q,limit){
+ let w=im.naturalWidth,h=im.naturalHeight;const sc=Math.min(1,max/Math.max(w,h));
+ w=Math.max(1,Math.round(w*sc));h=Math.max(1,Math.round(h*sc));
+ const c=document.createElement('canvas');c.width=w;c.height=h;
+ const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);
+ let url=c.toDataURL('image/jpeg',q),big=false;
+ let qq=q;
+ while(url.length>limit&&qq>0.4){qq-=0.1;url=c.toDataURL('image/jpeg',qq);big=true}
+ while(url.length>limit&&w>400){w=Math.round(w*0.8);h=Math.round(h*0.8);c.width=w;c.height=h;const y=c.getContext('2d');y.fillStyle='#fff';y.fillRect(0,0,w,h);y.drawImage(im,0,0,w,h);url=c.toDataURL('image/jpeg',qq);big=true}
+ return {url,w,h,big};
+}
+function gelCrop(G){
+ const a=G.adj,w=G.w,h=G.h;
+ const x=Math.round(a.cl*w),y=Math.round(a.ct*h);
+ const cw=Math.max(8,Math.round((1-a.cl-a.cr)*w)),ch=Math.max(8,Math.round((1-a.ct-a.cb)*h));
+ return {x,y,w:cw,h:ch};
+}
+function gelBase(G){
+ const c=document.createElement('canvas');c.width=G.w;c.height=G.h;const x=c.getContext('2d');
+ x.fillStyle='#fff';x.fillRect(0,0,G.w,G.h);
+ if(GIMG){x.save();x.translate(G.w/2,G.h/2);x.rotate((G.adj.rot||0)*Math.PI/180);x.drawImage(GIMG,-G.w/2,-G.h/2,G.w,G.h);x.restore()}
+ return c;
+}
+function gelRender(G,scale){
+ const cr=gelCrop(G),st=G.style,dark=st.bg==='black';
+ const iw=Math.round(cr.w*scale),ih=Math.round(cr.h*scale);
+ const fs=Math.max(8,Math.round(ih/24*(st.fs||100)/100));
+ const pad=Math.round(fs*0.7);
+ const mkOn=G.mk.show&&G.mk.items.length;
+ const laOn=G.lanes.show&&G.lanes.n>0;
+ const ang=(G.lanes.angle||0)*Math.PI/180;
+ const mL=pad+(mkOn?Math.round(fs*3.4):0);
+ let mT=pad;
+ if(laOn)mT+=ang?Math.round(fs*4.2):Math.round(fs*1.9);
+ if(st.panel)mT=Math.max(mT,pad+Math.round(fs*2.2));
+ const mR=pad,mB=pad+(st.title&&G.title?Math.round(fs*2):0);
+ const c=document.createElement('canvas');c.width=mL+iw+mR;c.height=mT+ih+mB;
+ const x=c.getContext('2d');
+ x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,c.width,c.height);
+ const base=gelBase(G);
+ const f=[];const a=G.adj;
+ if(a.gray)f.push('grayscale(1)');
+ if(a.bright!==100)f.push(`brightness(${a.bright}%)`);
+ if(a.contrast!==100)f.push(`contrast(${a.contrast}%)`);
+ if(a.invert)f.push('invert(1)');
+ x.save();if(f.length)x.filter=f.join(' ');
+ x.imageSmoothingQuality='high';
+ x.drawImage(base,cr.x,cr.y,cr.w,cr.h,mL,mT,iw,ih);
+ x.restore();
+ const ink=dark?'#fff':'#000';
+ x.fillStyle=ink;x.strokeStyle=ink;
+ const FF=`${fs}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
+ x.font=FF;x.textBaseline='alphabetic';
+ if(laOn){
+  const n=G.lanes.n;
+  for(let i=0;i<n;i++){
+   const t=n>1?i/(n-1):0.5;
+   const px=mL+(G.lanes.x0+(G.lanes.x1-G.lanes.x0)*t)*iw;
+   const lab=(G.lanes.labels[i]||'').trim()||String(i+1);
+   x.save();x.translate(px,mT-Math.round(fs*0.55));
+   if(ang){x.rotate(-ang);x.textAlign='left';x.fillText(lab,0,0)}
+   else{x.textAlign='center';x.fillText(lab,0,0)}
+   x.restore();
+  }
+ }
+ if(mkOn){
+  x.textAlign='right';x.lineWidth=Math.max(1,Math.round(fs*0.08));
+  for(const it of G.mk.items){
+   const py=mT+it.y*ih;
+   x.beginPath();x.moveTo(mL-Math.round(fs*0.5),py);x.lineTo(mL-Math.round(fs*0.1),py);x.stroke();
+   x.fillText(String(it.v||''),mL-Math.round(fs*0.7),py+Math.round(fs*0.35));
+  }
+  x.save();x.translate(mL-Math.round(fs*0.7),mT-Math.round(fs*0.45));x.textAlign='right';
+  x.font=`${Math.round(fs*0.85)}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
+  x.fillText(G.mk.unit||'',0,0);x.restore();
+ }
+ if(st.panel){x.font=`700 ${Math.round(fs*1.5)}px "Helvetica Neue",Helvetica,Arial,sans-serif`;x.textAlign='left';x.fillText(st.panel,pad,pad+Math.round(fs*1.3))}
+ if(st.title&&G.title){x.font=FF;x.textAlign='left';x.fillText(G.title,mL,mT+ih+Math.round(fs*1.4))}
+ return {canvas:c,mL,mT,iw,ih,fs};
+}
+function gelPaint(){
+ const host=$('#gelc');if(!host||!S.gel)return;
+ const G=S.gel;
+ if(!G.img){host.innerHTML='<p class="mute small">Elige una foto del gel para empezar.</p>';return}
+ const maxW=Math.max(240,Math.min(host.clientWidth||600,900));
+ const cr=gelCrop(G);const sc=Math.min(1,maxW/ (cr.w*1.25));
+ const r=gelRender(G,sc||0.5);
+ r.canvas.id='gelcv';r.canvas.style.width='100%';r.canvas.style.height='auto';
+ r.canvas.setAttribute('role','img');r.canvas.setAttribute('aria-label','Vista del gel anotado');
+ host.innerHTML='';host.appendChild(r.canvas);
+ GEOM=r;
+}
+let GEOM=null;
+function gelClick(ev){
+ const G=S.gel;if(!G||!G.img||!GEOM)return;
+ const cv=$('#gelcv');if(!cv)return;
+ const b=cv.getBoundingClientRect();
+ const sx=cv.width/b.width;
+ const px=(ev.clientX-b.left)*sx,py=(ev.clientY-b.top)*sx;
+ const y=(py-GEOM.mT)/GEOM.ih;
+ if(y<-0.02||y>1.02)return;
+ G.mk.items.push({y:Math.min(1,Math.max(0,y)),v:''});
+ G.mk.items.sort((a,b)=>a.y-b.y);
+ G.mk.show=true;_renderBody();
+ setTimeout(()=>{const list=$$('[data-gelmk="v"]');const i=G.mk.items.findIndex(z=>!z.v);const el=list[i<0?list.length-1:i];el&&el.focus()},30);
+}
+async function gelSave(){
+ const G=S.gel;if(!G)return;
+ if(!G.img){toast('Falta la foto del gel.');return}
+ if(!String(G.title||'').trim()){toast('Ponle un título al gel.');$('#gel-title')&&$('#gel-title').focus();return}
+ const isNew=!!G._new;const id=isNew?store.newId('gels'):G._id;
+ const doc={title:G.title,kind:G.kind,date:G.date,notes:G.notes,strains:G.strains,plasmids:G.plasmids,
+  w:G.w,h:G.h,adj:G.adj,lanes:G.lanes,mk:G.mk,style:G.style,thumb:G.thumb||'',
+  updatedAt:now(),updatedBy:S.uid};
+ if(isNew){doc.createdAt=now();doc.createdBy=S.uid;doc.owner=S.uid}else{doc.createdAt=G.createdAt||now();doc.createdBy=G.createdBy||S.uid;doc.owner=G.owner||S.uid}
+ try{
+  if(isNew||S.gelImgDirty)await store.set('gelimgs',id,{img:G.img,updatedAt:now()});
+  await store.set('gels',id,doc);
+  S.gelImgDirty=false;G._new=false;G._id=id;
+  logActivity(isNew?'creó':'editó',null,null,`el gel «${G.title}»`);
+  toast(isNew?'Gel guardado':'Cambios guardados');
+  if(isNew)location.hash='geles/'+id;else _renderBody();
+ }catch(e){toast(gelWriteErr(e))}
+}
+function gelWriteErr(e){
+ if(e&&e.code==='permission-denied')return 'Las reglas de Firebase todavía no permiten guardar geles. En Ajustes tienes las dos líneas que hay que añadir.';
+ if(e&&e.code==='invalid-argument')return 'La foto es demasiado grande para la base de datos. Prueba con una más pequeña.';
+ return writeErr(e);
+}
+async function gelDelete(){
+ const G=S.gel;if(!G||G._new)return;
+ try{await store.del('gels',G._id);await store.del('gelimgs',G._id);toast('Gel borrado');location.hash='geles'}catch(e){toast(writeErr(e))}
+}
+function gelExport(mult){
+ const G=S.gel;if(!G||!G.img){toast('Falta la foto.');return}
+ const r=gelRender(G,mult);
+ r.canvas.toBlob(b=>{
+  if(!b){toast('No se ha podido exportar.');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=(String(G.title||'gel').replace(/[^\w\-]+/g,'_')||'gel')+'_'+r.canvas.width+'px.png';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast(`Exportado a ${r.canvas.width}×${r.canvas.height} px`);
+ },'image/png');
+}
+
+/* --- Geles: vistas --- */
+function gelShell(){
+ const ed=S.sub&&S.sub!=='';
+ return `<div class="vhead"><div>${ed?`<a class="btn sm ghost" href="#geles" style="margin:0 0 6px -8px">${ic('back')}Geles</a>`:''}<h1>${ed?'Gel':'Geles'}</h1><p class="lede">${ed?'Los ajustes se guardan aparte: la foto original no se toca nunca.':'Fotos de geles de agarosa y de poliacrilamida, anotadas y listas para publicar.'}</p></div>
+ <div class="vacts">${ed?`<button class="btn" data-a="gel-export" data-v="2">${ic('down')}Exportar PNG</button>${S.canWrite?`<button class="btn primary" data-a="gel-save">${ic('check')}Guardar</button>`:''}`:(S.canWrite?`<label class="btn primary">${ic('plus')}Nuevo gel<input type="file" accept="image/*" id="gel-file-new" hidden></label>`:'')}</div></div><div id="vb"></div>`;
+}
+function gelListBody(){
+ lazySub('gels');lazySub('gelimgs');
+ const ds=[...S.data.gels.values()].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||natCmp(a.title,b.title));
+ if(!ds.length)return `<section class="card"><h2>Todavía no hay geles</h2><p class="small mute">Pulsa «Nuevo gel» y elige una foto. Puedes recortarla, enderezarla, ajustar brillo y contraste, poner los carriles y el marcador, y exportarla a la resolución que te pida la revista.</p><p class="small mute">Si al guardar sale un aviso de permisos, hay que añadir dos colecciones a las reglas de Firebase. Las tienes en Ajustes.</p></section>`;
+ return `<div class="gelgrid">${ds.map(d=>`<a class="gelcard" href="#geles/${esc(d._id)}">${d.thumb?`<img src="${esc(d.thumb)}" alt="" loading="lazy">`:'<div class="gelph"></div>'}<div class="gelcard-b"><b>${esc(d.title||'Sin título')}</b><span class="small mute">${esc((GEL_KIND.find(k=>k[0]===d.kind)||[])[1]||'')}${d.date?' · '+esc(fmtD(d.date)):''}</span></div></a>`).join('')}</div>`;
+}
+function gelEdBody(){
+ lazySub('gels');lazySub('gelimgs');
+ if(S.sub!=='nuevo'&&!S.data.gels.has(S.sub)&&S.got.has('gels'))return `<section class="card"><p class="mute small">Este gel ya no existe.</p></section>`;
+ if(!S.gel||(S.sub!=='nuevo'&&S.gel._id!==S.sub)||(S.sub==='nuevo'&&!S.gel._new)){gelOpen(S.sub);if(!S.gel)return `<section class="card"><p class="mute small">Cargando…</p></section>`}
+ const G=S.gel;
+ const sl=(k,l,min,max,st,val,fmt)=>`<div class="fld"><label class="lbl" for="g-${k}">${l} <span class="mono small mute">${fmt?fmt(val):val}</span></label><input id="g-${k}" type="range" data-gelr="${k}" min="${min}" max="${max}" step="${st}" value="${val}"></div>`;
+ const unit=G.mk.unit||GEL_UNIT[G.kind];
+ return `<div class="gel">
+ <div class="gelview"><div id="gelc" class="gelcanvas"${G.img?' data-a="gel-click"':''}></div>
+  ${G.img?`<p class="help">Pulsa en la imagen, a la altura de una banda del marcador, para añadir su etiqueta.</p>`:`<label class="btn primary" style="align-self:flex-start">${ic('plus')}Elegir foto<input type="file" accept="image/*" id="gel-file" hidden></label>`}
+  ${S.gelErr?`<p class="hint bad">${esc(S.gelErr)}</p>`:''}
+ </div>
+ <div class="stack">
+  <section class="card"><h2>Datos</h2><div class="form">
+   <div class="fld"><label class="lbl req" for="gel-title">Título</label><input id="gel-title" data-gelk="title" value="${esc(G.title)}" placeholder="Purificación de Tse1"></div>
+   <div class="fld half"><label class="lbl" for="gel-kind">Tipo de gel</label><select id="gel-kind" data-gelsel="kind">${GEL_KIND.map(([k,l])=>`<option value="${k}"${G.kind===k?' selected':''}>${esc(l)}</option>`).join('')}</select></div>
+   <div class="fld half"><label class="lbl" for="gel-date">Fecha</label><input id="gel-date" data-gelk="date" type="date" value="${esc(G.date||'')}"></div>
+   <div class="fld"><label class="lbl" for="gel-notes">Notas</label><textarea id="gel-notes" data-gelk="notes" rows="2" placeholder="Condiciones, tampón, tiempo…">${esc(G.notes||'')}</textarea></div>
+  </div></section>
+  <section class="card"><details open><summary>Imagen</summary><div class="form" style="margin-top:10px">
+   ${sl('rot','Enderezar',-15,15,0.1,G.adj.rot,v=>v+' °')}
+   ${sl('ct','Recortar por arriba',0,45,0.5,Math.round(G.adj.ct*1000)/10,v=>v+' %')}
+   ${sl('cb','Recortar por abajo',0,45,0.5,Math.round(G.adj.cb*1000)/10,v=>v+' %')}
+   ${sl('cl','Recortar por la izquierda',0,45,0.5,Math.round(G.adj.cl*1000)/10,v=>v+' %')}
+   ${sl('cr','Recortar por la derecha',0,45,0.5,Math.round(G.adj.cr*1000)/10,v=>v+' %')}
+   ${sl('bright','Brillo',40,180,1,G.adj.bright,v=>v+' %')}
+   ${sl('contrast','Contraste',40,250,1,G.adj.contrast,v=>v+' %')}
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk="gray"${G.adj.gray?' checked':''}> Blanco y negro</label></div>
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk="invert"${G.adj.invert?' checked':''}> Invertir (bandas oscuras sobre fondo claro)</label></div>
+   <button class="btn sm" data-a="gel-resetadj" style="align-self:flex-start">Deshacer los ajustes</button>
+   <p class="help">Solo hay ajustes lineales de brillo y contraste, y se aplican a toda la imagen. La foto original se guarda intacta, así que cualquier ajuste se puede deshacer. No hay forma de retocar bandas sueltas, que es lo que las revistas consideran manipulación.</p>
+  </div></details></section>
+  <section class="card"><details open><summary>Carriles</summary><div class="form" style="margin-top:10px">
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="lanes.show"${G.lanes.show?' checked':''}> Poner etiquetas de carril</label></div>
+   ${G.lanes.show?`<div class="fld half"><label class="lbl" for="g-ln">Número de carriles</label><input id="g-ln" type="number" min="1" max="30" step="1" data-geln="n" value="${G.lanes.n}"></div>
+   <div class="fld half"><label class="lbl" for="g-angle">Inclinación</label><select id="g-angle" data-gelsel="lanes.angle"><option value="0"${!G.lanes.angle?' selected':''}>Horizontal</option><option value="45"${G.lanes.angle==45?' selected':''}>45°</option><option value="90"${G.lanes.angle==90?' selected':''}>Vertical</option></select></div>
+   ${sl('x0','Centro del primer carril',0,100,0.5,Math.round(G.lanes.x0*1000)/10,v=>v+' %')}
+   ${sl('x1','Centro del último carril',0,100,0.5,Math.round(G.lanes.x1*1000)/10,v=>v+' %')}
+   <div class="lanegrid">${Array.from({length:Math.min(30,G.lanes.n)},(_,i)=>`<label class="lanein"><span>${i+1}</span><input data-gellab="${i}" value="${esc(G.lanes.labels[i]||'')}" placeholder="${i+1}" aria-label="Etiqueta del carril ${i+1}"></label>`).join('')}</div>`:''}
+  </div></details></section>
+  <section class="card"><details open><summary>Marcador</summary><div class="form" style="margin-top:10px">
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="mk.show"${G.mk.show?' checked':''}> Poner el marcador</label></div>
+   <div class="fld half"><label class="lbl" for="g-unit">Unidad</label><input id="g-unit" data-gelk2="mk.unit" class="mono" value="${esc(unit)}" placeholder="${esc(GEL_UNIT[G.kind])}"></div>
+   ${G.mk.items.length?`<div class="mkrows">${G.mk.items.map((it,i)=>`<div class="mkrow"><input data-gelmk="v" data-i="${i}" value="${esc(it.v||'')}" placeholder="${G.kind==='page'?'70':'1000'}" aria-label="Valor de la banda ${i+1}"><span class="mono small mute">${Math.round(it.y*1000)/10} %</span><button type="button" class="btn ghost icon sm" data-a="gel-mkdel" data-i="${i}" aria-label="Quitar">${ic('x')}</button></div>`).join('')}</div>`:'<p class="small mute">Pulsa en la imagen, a la altura de cada banda del marcador, para irlas añadiendo.</p>'}
+  </div></details></section>
+  <section class="card"><details><summary>Estilo y exportación</summary><div class="form" style="margin-top:10px">
+   <div class="fld"><span class="lbl">Fondo</span><div class="seg">${[['white','Blanco'],['black','Negro']].map(([k,l])=>`<button data-a="gel-bg" data-v="${k}" aria-pressed="${G.style.bg===k}">${l}</button>`).join('')}</div></div>
+   ${sl('fs','Tamaño de letra',60,180,5,G.style.fs,v=>v+' %')}
+   <div class="fld half"><label class="lbl" for="g-panel">Letra del panel</label><input id="g-panel" data-gelk2="style.panel" class="mono" maxlength="3" value="${esc(G.style.panel||'')}" placeholder="A"></div>
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="style.title"${G.style.title?' checked':''}> Escribir el título debajo</label></div>
+   <div class="vacts"><button class="btn" data-a="gel-export" data-v="1">PNG 1×</button><button class="btn" data-a="gel-export" data-v="2">PNG 2×</button><button class="btn" data-a="gel-export" data-v="4">PNG 4×</button></div>
+   <p class="help">El tamaño que sale al exportar depende del recorte. Para una figura de una columna, las revistas suelen pedir unos 1000 px de ancho como mínimo; con 2× o 4× vas sobrado.</p>
+  </div></details></section>
+  ${!G._new&&S.canWrite?`<section class="card"><button class="btn danger" data-a="gel-del">${ic('trash')}Borrar este gel</button></section>`:''}
+ </div></div>`;
+}
+function gelBody(){return S.sub?gelEdBody():gelListBody()}
+function gelAfter(){if(S.route==='geles'&&S.sub)gelPaint()}
+
 /* ---------- views ---------- */
 const VIEWS={
  inicio:{shell:()=>'<div id="vb" class="stack"></div>',body:dashBody,deps:'*'},
@@ -2369,6 +2832,7 @@ const VIEWS={
  tesis:{shell:thesisShell,body:thesisBody,deps:['theses','milestones','members']},
  'mi-espacio':{shell:meShell,body:meBody,deps:['personal','strains','plasmids','oligos','reagents']},
  importar:{shell:impShell,body:impBody,deps:['members']},
+ geles:{shell:gelShell,body:gelBody,after:gelAfter,deps:['gels','strains','plasmids'],needsData:false},
  calculadoras:{shell:calcShell,body:calcBody,deps:['oligos','reagents','meta','plasmids'],needsData:false},
  ajustes:{shell:setShell,body:setBody,deps:['members','strains','plasmids','oligos','reagents','boxes','protocols']}
 };
@@ -2442,7 +2906,22 @@ document.addEventListener('click',async e=>{
   /* settings & sample data */
   case 'set-save':{const e1=$('#set-err');try{const r=await saveMember($('#set-prefix').value,$('#set-role').value,$('#set-name').value);e1.textContent=r||'';if(!r)toast('Perfil guardado')}catch(er){e1.textContent=writeErr(er)}break}
   /* calculators */
-  case 'calc-copy':if(S.sub==='pcr')copyText(pcrText(),'Resultado copiado');else if(S.sub==='tampones')copyText(bufText(),'Receta copiada');else if(S.sub==='a280')copyText(a280Text(),'Resultado copiado');else if(S.sub==='protparam')copyText(ppText(),'Resultado copiado');else if(S.sub==='ensamblaje')copyText(asmText(),'Resultado copiado');else if(S.sub==='cebadores')copyText(pdText(),'Cebadores copiados');break;
+  /* geles */
+  case 'gel-click':gelClick(e);break;
+  case 'copy-rules':copyText('match /gels/{id}     { allow read, write: if ...; }\nmatch /gelimgs/{id}  { allow read, write: if ...; }','Reglas copiadas');break;
+  case 'gel-save':gelSave();break;
+  case 'gel-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}gelDelete();break;
+  case 'gel-export':gelExport(+el.dataset.v||1);break;
+  case 'gel-bg':{S.gel.style.bg=el.dataset.v;_renderBody();break}
+  case 'gel-mkdel':{S.gel.mk.items.splice(+el.dataset.i,1);_renderBody();break}
+  case 'gel-resetadj':{S.gel.adj={...gelDef().adj};_renderBody();break}
+  case 'calc-copy':if(S.sub==='pcr')copyText(pcrText(),'Resultado copiado');else if(S.sub==='tampones')copyText(bufText(),'Receta copiada');else if(S.sub==='a280')copyText(a280Text(),'Resultado copiado');else if(S.sub==='protparam')copyText(ppText(),'Resultado copiado');else if(S.sub==='ensamblaje')copyText(asmText(),'Resultado copiado');else if(S.sub==='cebadores')copyText(pdText(),'Cebadores copiados');else if(S.sub==='codones')copyText(codCalc().out||'','Secuencia copiada');break;
+  case 'cod-org':{const C=codState();C.org=el.dataset.v;codSave();_renderBody();break}
+  case 'cod-mode':{const C=codState();C.mode=el.dataset.v;codSave();_renderBody();break}
+  case 'cod-strat':{const C=codState();C.strat=el.dataset.v;codSave();_renderBody();break}
+  case 'cod-copy':{const r=codCalc();r.out?copyText(r.out,'Secuencia copiada'):toast(r.err);break}
+  case 'cod-fasta':{const r=codCalc();r.out?copyText(codFasta(),'FASTA copiado'):toast(r.err);break}
+  case 'cod-again':{const C=codState();C.seed=(numV(C.seed)||1)+1;codSave();codRefresh();break}
   case 'pd-mode':{const P=pdState();P.mode=el.dataset.v;pdSave();_renderBody();break}
   case 'pd-copy':copyText(pdText(),'Cebadores copiados');break;
   case 'pd-save':pdSaveOligos();break;
@@ -2480,6 +2959,20 @@ document.addEventListener('input',e=>{
  if(t.id==='f-seq'){$('#seqstats').innerHTML=seqStatsHTML(t.value);return}
  if(t.classList.contains('cl-filter')){const q=norm(t.value);$$('label',t.nextElementSibling).forEach(l=>l.hidden=!!q&&!l.dataset.q.includes(q));return}
  if(t.id==='imp-paste'){impState().raw=t.value;return}
+  if(t.id==='gel-file'||t.id==='gel-file-new'){const f=t.files&&t.files[0];if(!f)return;if(t.id==='gel-file-new'){S.gel={_new:true,...gelDef(),img:null,w:0,h:0};S.gelImgDirty=true;location.hash='geles/nuevo';setTimeout(()=>gelPickFile(f),60)}else{S.gelImgDirty=true;gelPickFile(f)}return}
+  if(t.dataset.gelk){S.gel[t.dataset.gelk]=t.value;if(t.dataset.gelk==='title')gelPaint();return}
+  if(t.dataset.gelk2){const[a,b]=t.dataset.gelk2.split('.');S.gel[a][b]=t.value;gelPaint();return}
+  if(t.dataset.gelmk){const i=+t.dataset.i;if(S.gel.mk.items[i]){S.gel.mk.items[i].v=t.value;gelPaint()}return}
+  if(t.dataset.gellab){S.gel.lanes.labels[+t.dataset.gellab]=t.value;gelPaint();return}
+  if(t.dataset.geln){S.gel.lanes.n=Math.max(1,Math.min(30,Math.round(numV(t.value)||1)));_renderBody();return}
+  if(t.dataset.gelr){const k=t.dataset.gelr,v=numV(t.value)||0;const lbl=t.previousElementSibling&&t.previousElementSibling.querySelector('span');
+   if(k==='rot'){S.gel.adj.rot=v;lbl&&(lbl.textContent=v+' °')}
+   else if(['ct','cb','cl','cr'].includes(k)){S.gel.adj[k]=v/100;lbl&&(lbl.textContent=v+' %')}
+   else if(k==='bright'||k==='contrast'){S.gel.adj[k]=v;lbl&&(lbl.textContent=v+' %')}
+   else if(k==='x0'||k==='x1'){S.gel.lanes[k]=v/100;lbl&&(lbl.textContent=v+' %')}
+   else if(k==='fs'){S.gel.style.fs=v;lbl&&(lbl.textContent=v+' %')}
+   gelPaint();return}
+  if(t.dataset.codk){const C=codState();C[t.dataset.codk]=t.value;codSave();codRefresh();return}
   if(t.dataset.pdk){const P=pdState();P[t.dataset.pdk]=t.value;pdSave();pdRefresh();return}
   if(t.dataset.asmk){asmState()[t.dataset.asmk]=t.value;asmSave();asmRefresh();return}
  if(t.dataset.asm){const r=asmState().rows[+t.dataset.i];if(r){r[t.dataset.asm]=t.value;asmSave();asmRefresh()}return}
@@ -2502,6 +2995,12 @@ document.addEventListener('change',async e=>{
  if(t.id==='imp-mkbox'){impState().mkBoxes=t.checked;return}
  if(t.id==='imp-owner'){impState().owner=t.value;return}
  if(t.dataset.buf==='name'){const r=bufState().rows[+t.dataset.i];const L=BLIBM.get(norm(t.value));if(r&&L){r.name=L.name;if(L.mw!=null)r.mw=L.mw;if(L.st!=null){r.sc=L.st;r.su=L.su;r.mode='stock'}else r.mode='solid';if(L.fu&&!(numV(r.fc)>0))r.fu=L.fu;bufSave();_renderBody()}return}
+  if(t.dataset.gelchk){S.gel.adj[t.dataset.gelchk]=t.checked;gelPaint();return}
+  if(t.dataset.gelchk2){const[a,b]=t.dataset.gelchk2.split('.');S.gel[a][b]=t.checked;_renderBody();return}
+  if(t.dataset.gelsel&&t.dataset.gelsel.includes('.')){const[a,b]=t.dataset.gelsel.split('.');S.gel[a][b]=numV(t.value)??t.value;gelPaint();return}
+  if(t.dataset.gelsel){S.gel[t.dataset.gelsel]=t.value;if(t.dataset.gelsel==='kind'&&!S.gel.mk.items.length)S.gel.mk.unit=GEL_UNIT[t.value];_renderBody();return}
+  if(t.dataset.codchk){codState()[t.dataset.codchk]=t.checked;codSave();codRefresh();return}
+  if(t.dataset.codsite){const C=codState();const n=t.dataset.codsite;C.sites=t.checked?[...new Set([...C.sites,n])]:C.sites.filter(x=>x!==n);codSave();_renderBody();return}
   if(t.dataset.pdsel){pdState()[t.dataset.pdsel]=t.value;pdSave();_renderBody();return}
   if(t.dataset.asm==='name'){const r=asmState().rows[+t.dataset.i];const d=[...S.data.plasmids.values()].find(x=>norm(x.code)===norm(t.value)||norm(x.name)===norm(t.value));if(r&&d){r.name=d.code;if(numV(d.size)>0)r.bp=numV(d.size);asmSave();_renderBody()}return}
  if(t.dataset.asmsel){asmState()[t.dataset.asmsel]=t.value;asmSave();_renderBody();return}
