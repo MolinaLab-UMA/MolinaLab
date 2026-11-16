@@ -1079,10 +1079,9 @@ function setBody(){
    <div class="fld half"><label class="lbl" for="set-role">Papel en el grupo</label><select id="set-role">${ROLES.map(r=>`<option${m.role===r?' selected':''}>${r}</option>`).join('')}</select></div></div>
    <p class="small mute">Tus códigos: <span class="mono">${esc(pre)}-001</span> (cepas), <span class="mono">p${esc(pre)}-001</span> (plásmidos), <span class="mono">o${esc(pre)}-001</span> (oligos). Los reactivos usan una numeración común, <span class="mono">R-001</span>.</p>
    <p class="ferr" id="set-err"></p>${S.canWrite?`<div class="vacts"><button class="btn primary" data-a="set-save">Guardar perfil</button></div>`:''}</section>`:''}
-  <section class="card"><h2>Reglas de Firebase para los geles</h2>
-  <p class="small mute">Los geles se guardan en dos colecciones nuevas. Si al guardar uno sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y añade estas dos líneas junto a las de las demás colecciones. Donde pone los puntos suspensivos, copia la misma condición que ya tiene la línea de <span class="mono">/strains</span>.</p>
-  <pre class="rulebox mono">match /gels/{id}     { allow read, write: if ...; }\nmatch /gelimgs/{id}  { allow read, write: if ...; }</pre>
-  <button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar las dos líneas</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
+  <section class="card"><h2>Reglas de Firebase para los geles</h2><p class="small mute">Los geles se guardan en dos colecciones nuevas, <span class="mono">gels</span> y <span class="mono">gelimgs</span>. Si al guardar uno sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y a&ntilde;ade estos dos nombres al final de la lista de colecciones que ya hay, dentro de <span class="mono">match /{coleccion}/{id}</span>. Luego pulsa Publicar.</p><pre class="rulebox mono">['strains', 'plasmids', 'oligos', 'reagents', 'protocols',
+ 'boxes', 'theses', 'milestones', 'meta',
+ 'gels', 'gelimgs']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
    <p class="small mute" style="margin-top:10px">Para sumar a alguien, añade su correo a la lista de acceso (consola de Firebase → Firestore Database → Reglas) y pásale la dirección de la web. Aparecerá aquí cuando entre por primera vez.</p></section>
  </div><div class="stack">
   <section class="card stack"><h2>Exportar</h2><p class="small mute">CSV con punto y coma, listo para abrir en Excel. Caja y posición van en columnas separadas, así que se puede volver a importar.</p><div class="vacts">${TK.map(t=>`<button class="btn sm" data-a="export" data-type="${t}">${ic('download')}${T[t].label}</button>`).join('')}</div><div class="vacts"><button class="btn sm" data-a="backup-json">${ic('download')}Copia completa (JSON)</button></div></section>
@@ -2729,7 +2728,7 @@ async function gelSave(){
  }catch(e){toast(gelWriteErr(e))}
 }
 function gelWriteErr(e){
- if(e&&e.code==='permission-denied')return 'Las reglas de Firebase todavía no permiten guardar geles. En Ajustes tienes las dos líneas que hay que añadir.';
+ if(e&&e.code==='permission-denied')return 'Las reglas de Firebase todavía no permiten guardar geles. En Ajustes tienes los dos nombres que hay que añadir a la lista de colecciones.';
  if(e&&e.code==='invalid-argument')return 'La foto es demasiado grande para la base de datos. Prueba con una más pequeña.';
  return writeErr(e);
 }
@@ -2908,7 +2907,7 @@ document.addEventListener('click',async e=>{
   /* calculators */
   /* geles */
   case 'gel-click':gelClick(e);break;
-  case 'copy-rules':copyText('match /gels/{id}     { allow read, write: if ...; }\nmatch /gelimgs/{id}  { allow read, write: if ...; }','Reglas copiadas');break;
+  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'gels', 'gelimgs']",'Lista copiada');break;
   case 'gel-save':gelSave();break;
   case 'gel-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}gelDelete();break;
   case 'gel-export':gelExport(+el.dataset.v||1);break;
