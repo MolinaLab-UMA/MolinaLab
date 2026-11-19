@@ -13,7 +13,7 @@
   --bg:#eef1f4; --surface:#ffffff; --surface-2:#f5f7f9; --sunk:#e3e8ed; --line:#d7dde4; --line-2:#c2cbd4;
   --fg:#14202b; --fg-2:#4b5966; --fg-3:#768491;
   --accent:#2443c4; --accent-ink:#ffffff; --accent-soft:#e4e9fb; --accent-line:#b7c4f1;
-  --c-exp:#7c5cff;--c-strain:#c27905; --c-plasmid:#7346c8; --c-oligo:#0a8279; --c-reagent:#c43b61; --c-other:#5d6b78;
+  --c-exp:#7c5cff;--c-prep:#0e8f7a;--c-strain:#c27905; --c-plasmid:#7346c8; --c-oligo:#0a8279; --c-reagent:#c43b61; --c-other:#5d6b78;
   --cap-ink:#ffffff;
   --ok:#1b7a44; --ok-soft:#dbf0e3; --warn:#94600a; --warn-soft:#fbefd5; --bad:#b12626; --bad-soft:#fbe0e0;
   --shadow:0 1px 2px rgba(20,32,43,.06),0 10px 30px rgba(20,32,43,.10);
@@ -27,7 +27,7 @@
   --bg:#0c1116; --surface:#141b22; --surface-2:#19212a; --sunk:#0f151b; --line:#253039; --line-2:#33414e;
   --fg:#e2e8ee; --fg-2:#a2afbc; --fg-3:#72808e;
   --accent:#8199ff; --accent-ink:#0c1116; --accent-soft:#1b2446; --accent-line:#34449a;
-  --c-exp:#a99bff;--c-strain:#f0a73a; --c-plasmid:#a888f1; --c-oligo:#3cc3b7; --c-reagent:#f07899; --c-other:#93a1ae;
+  --c-prep:#3fd0b6;--c-exp:#a99bff;--c-strain:#f0a73a; --c-plasmid:#a888f1; --c-oligo:#3cc3b7; --c-reagent:#f07899; --c-other:#93a1ae;
   --cap-ink:#0c1116;
   --ok:#5cc88a; --ok-soft:#13301f; --warn:#e7b24f; --warn-soft:#342910; --bad:#f27a7a; --bad-soft:#3a1717;
   --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 34px rgba(0,0,0,.4); --scrim:rgba(0,0,0,.58);
@@ -454,6 +454,25 @@ main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
 .unit select{width:auto;flex:none;padding:.5rem .4rem;font-size:.85rem}
 .ctbl td.bad-c{color:var(--bad);font-size:.82rem}
 .rulebox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:.8rem;overflow-x:auto;white-space:pre;color:var(--fg-2)}
+.card .vacts{flex-wrap:wrap}
+.pmview{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+@media (min-width:981px){.pmview{position:sticky;top:76px}}
+.pmhost{display:flex;justify-content:center;align-items:center;min-height:140px}
+.pmmap{width:100%;height:auto;max-width:560px;font-family:var(--f-body)}
+.pmmap .pmt{font-size:8.5px;fill:var(--fg-3);font-family:var(--f-mono)}
+.pmmap .pme{font-size:9px;fill:var(--fg-2);font-family:var(--f-mono)}
+.pmmap .pml{font-size:10px;fill:var(--fg)}
+.pmmap .pmlin{font-size:10px;fill:#fff;font-weight:600}
+.pmmap .pmn{font-size:15px;fill:var(--fg);font-family:var(--f-display);font-weight:700}
+.pmmap .pmb{font-size:12px;fill:var(--fg-2);font-family:var(--f-mono)}
+.pmmap .pme2{font-size:10px;fill:var(--fg-3);font-family:var(--f-mono)}
+.pmmap .pmft{cursor:pointer}
+.pmmap .pmft:hover{opacity:.78}
+.pmleg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:10px;font-size:.78rem;color:var(--fg-2)}
+.pmleg span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.pmsel{margin-top:10px;padding:9px 11px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);font-size:.84rem;color:var(--fg-2);min-height:38px}
+.ctbl tr.on td{background:var(--accent-soft)}
 .gel{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:980px){.gel{grid-template-columns:minmax(0,1fr)}}
 @media (min-width:981px){.gelview{position:sticky;top:76px}}
@@ -554,7 +573,9 @@ const IC={
  note:'<path d="M5 3h14v18H5z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
  calc:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8.5 11.5h0M12 11.5h0M15.5 11.5h0M8.5 15h0M12 15h0M15.5 15h0M8.5 18h0M12 18h0M15.5 18h0" stroke-width="2.4"/>',
  pcr:'<path d="M4 18c3 0 3-12 6-12s3 12 6 12 2-6 4-6"/><path d="M3 21h18"/>',
+ prep:'<path d="M4 3h5v13.5a2.5 2.5 0 0 1-5 0z"/><path d="M15 3h5v13.5a2.5 2.5 0 0 1-5 0z"/><path d="M4 11h5M15 9h5"/>',
  exp:'<path d="M9 3h6M10 3v6.5L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 14h9"/>',
+ map:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2M20.5 12h-2M12 20.5v-2M3.5 12h2"/><path d="M15.5 6.2a7 7 0 0 1 2.3 3.1" stroke-width="3"/><path d="M7 16.5a7 7 0 0 0 4.6 2.9" stroke-width="3"/>',
  seq:'<path d="M5 3c0 6 14 12 14 18M19 3c0 6-14 12-14 18"/><path d="M7.5 6.5h9M6 10h12M6 14h12M7.5 17.5h9" stroke-width="1.6"/>',
  gel:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M12 3v18M16 3v18"/><path d="M5.5 8h3M9.5 11h3M13.5 8h3M5.5 14h3M13.5 15h3" stroke-width="2.2"/>'
 };
@@ -592,8 +613,8 @@ const ROLES=['IP','Postdoc','Doctorando/a','Técnico/a','Estudiante TFG/TFM','Co
 const STOCK=['Suficiente','Queda poco','Agotado'];
 const MS_STATUS=['Pendiente','En curso','Hecho'];
 const MS_KINDS=['Plan de investigación','Informe anual','Experimento','Artículo','Congreso','Estancia','Formación','Depósito y defensa','Otro'];
-const TK=['strains','plasmids','oligos','reagents','experiments'];
-const ART={experiments:'el experimento',strains:'la cepa',plasmids:'el plásmido',oligos:'el oligo',reagents:'el reactivo',protocols:'el protocolo',boxes:'la caja',theses:'la tesis',milestones:'el hito'};
+const TK=['strains','plasmids','oligos','reagents','experiments','preps'];
+const ART={preps:'la preparación',experiments:'el experimento',strains:'la cepa',plasmids:'el plásmido',oligos:'el oligo',reagents:'el reactivo',protocols:'el protocolo',boxes:'la caja',theses:'la tesis',milestones:'el hito'};
 
 const EXP_KINDS=['Clonaje','Purificación de proteína','Antagonismo o competición','Secreción y T6SS','Microscopía','Infección en planta','Curva de crecimiento','Secuenciación','Ómicas','Otro'];
 const T={
@@ -686,6 +707,34 @@ const T={
    {l:'Material',v:d=>{const n=(d.strains||[]).length+(d.plasmids||[]).length+(d.oligos||[]).length;return n?`<span class="num">${n}</span>`:''}},
    {l:'Geles',v:d=>{const n=[...S.data.gels.values()].filter(g=>g.exp===d._id).length;return n?`<span class="num">${n}</span>`:''}}
   ]},
+ preps:{route:'preparaciones',label:'Preparaciones',one:'preparación',nuevo:'Nueva preparación',color:'prep',icon:'prep',pre:p=>'pr'+p+'-',status:['En uso','Agotada','Descartada'],
+  fields:[
+   {k:'name',l:'Proteína',req:true,ph:'Tse1-His6',list:()=>uniq('preps','name').concat(protGroup().map(g=>g.name)).filter((v,i,a)=>v&&a.indexOf(v)===i)},
+   {k:'tag',l:'Etiqueta',t:'select',half:true,opts:['His6','Strep-tag II','GST','MBP','SUMO','Sin etiqueta','Otra']},
+   {k:'status',l:'Estado',t:'select',half:true,opts:['En uso','Agotada','Descartada']},
+   {k:'date',l:'Fecha de purificación',t:'date',half:true},
+   {k:'cultureV',l:'Volumen de cultivo (mL)',t:'number',half:true,ph:'1000'},
+   {k:'host',l:'Cepa de expresión',t:'ref1',ref:'strains',half:true},
+   {k:'plasmid',l:'Construcción',t:'ref1',ref:'plasmids',half:true},
+   {k:'exp',l:'Experimento',t:'ref1',ref:'experiments'},
+   {k:'induction',l:'Inducción',half:true,ph:'0,5 mM IPTG · 18 °C · 16 h',list:()=>uniq('preps','induction')},
+   {k:'method',l:'Purificación',half:true,ph:'Ni-NTA + exclusión molecular',list:()=>uniq('preps','method')},
+   {k:'buffer',l:'Tampón final',ph:'50 mM Tris pH 8, 300 mM NaCl, 10 % glicerol',list:()=>uniq('preps','buffer').concat(bufGroup().map(g=>g.name)).filter((v,i,a)=>v&&a.indexOf(v)===i)},
+   {k:'conc',l:'Concentración (mg/mL)',t:'number',half:true,ph:'2,4'},
+   {k:'vol',l:'Volumen total (µL)',t:'number',half:true,ph:'500'},
+   {k:'aliquots',l:'Número de alícuotas',t:'number',half:true,ph:'10'},
+   {k:'purity',l:'Pureza en el gel',t:'select',half:true,opts:['Sin determinar','>95 %','90–95 %','<90 %']},
+   {k:'loc',l:'Ubicación en el congelador',t:'loc'},
+   {k:'notes',l:'Notas',t:'textarea'}
+  ],
+  search:d=>[d.code,d.name,d.tag,d.method,d.buffer,d.induction,d.notes],
+  cols:[
+   {l:'Etiqueta',v:d=>esc(d.tag||'')},
+   {l:'Fecha',v:d=>esc(d.date?fmtD(d.date):'')},
+   {l:'mg/mL',v:d=>numV(d.conc)>0?`<span class="mono">${fmtN(numV(d.conc),2)}</span>`:''},
+   {l:'Total',v:d=>{const t=prepMg(d);return t!=null?`<span class="mono">${fmtN(t,2)} mg</span>`:''}},
+   {l:'Alícuotas',v:d=>numV(d.aliquots)>0?`<span class="num">${Math.round(numV(d.aliquots))}</span>`:''}
+  ]},
  reagents:{route:'reactivos',label:'Reactivos',one:'reactivo',nuevo:'Nuevo reactivo',color:'reagent',icon:'reagent',pre:()=>'R-',status:STOCK,
   fields:[
    {k:'name',l:'Nombre',req:true,ph:'Nombre del producto'},
@@ -710,7 +759,7 @@ const T={
 };
 
 /* ---------- state ---------- */
-const COLLS=['strains','plasmids','oligos','reagents','protocols','boxes','theses','milestones','members','meta','experiments'];
+const COLLS=['strains','plasmids','oligos','reagents','protocols','boxes','theses','milestones','members','meta','experiments','preps'];
 const S={mode:'loading',uid:null,canWrite:true,names:{},colors:{},route:'inicio',filters:{},data:{},got:new Set(),detail:null,boxSel:null,boxHi:null,meTab:'tareas',imp:null,slow:false,err:null,onboardAsked:false,protoQ:'',gsIdx:0};
 COLLS.forEach(c=>S.data[c]=new Map());
 S.data.personal=new Map();
@@ -759,6 +808,7 @@ function statusTag(type,d){if(type==='reagents')return '';const v=d.status;if(!v
 function codeOf(type,id){const d=S.data[type].get(id);return d?(rCode(d)||rName(d)):''}
 const rCode=d=>String((d&&d.code)||'');
 const rName=d=>String((d&&(d.name||d.title||d.label))||'');
+function prepMg(d){const c=numV(d.conc),v=numV(d.vol);return c>0&&v>0?c*v/1000:null}
 function refLink(type,id){const d=id&&S.data[type]&&S.data[type].get(id);if(!d)return '';const col=(T[type]&&T[type].color)||'exp';return `<button class="rlink" data-a="open" data-type="${type}" data-id="${esc(id)}"><span class="cap" style="--cap:var(--c-${col})"></span>${rCode(d)?`<span class="code">${esc(rCode(d))}</span>`:''}<span class="nm">${esc(rName(d))}</span></button>`}
 function uniq(type,k){const s=new Set();for(const d of S.data[type].values())if(d[k])s.add(d[k]);return [...s].sort(natCmp)}
 function hasDemo(){return [...TK,'protocols','boxes'].some(c=>[...S.data[c].values()].some(d=>d.demo))}
@@ -767,7 +817,7 @@ function hasDemo(){return [...TK,'protocols','boxes'].some(c=>[...S.data[c].valu
 const rowL=i=>String.fromCharCode(65+i);
 const posOf=(r,c)=>rowL(r)+(c+1);
 function parsePos(v,b){if(v==null||!b)return null;const s=String(v).trim().toUpperCase();let m=s.match(/^([A-Z])\s*[-:.]?\s*0*(\d{1,2})$/);if(m){const r=m[1].charCodeAt(0)-65,c=+m[2]-1;return (r>=0&&r<b.rows&&c>=0&&c<b.cols)?posOf(r,c):null}m=s.match(/^0*(\d{1,3})$/);if(m){const n=+m[1]-1;if(n>=0&&n<b.rows*b.cols)return posOf(Math.floor(n/b.cols),n%b.cols)}return null}
-function occ(boxId,exclude){const m=new Map();for(const t of ['strains','plasmids','oligos'])for(const d of S.data[t].values())if(d.loc&&d.loc.box===boxId&&d._id!==exclude)m.set(d.loc.pos,{type:t,d});return m}
+function occ(boxId,exclude){const m=new Map();for(const t of ['strains','plasmids','oligos','preps'])for(const d of S.data[t].values())if(d.loc&&d.loc.box===boxId&&d._id!==exclude)m.set(d.loc.pos,{type:t,d});return m}
 function sortedBoxes(){return [...S.data.boxes.values()].sort((a,b)=>natCmp(a.freezer,b.freezer)||natCmp(a.name,b.name))}
 function locShort(loc){if(!loc||!loc.box)return '';const b=S.data.boxes.get(loc.box);if(!b)return '';return `<span class="loc">${esc(b.name)} · <b class="mono">${esc(loc.pos||'')}</b></span>`}
 function locText(loc){if(!loc||!loc.box)return ['',''];const b=S.data.boxes.get(loc.box);return [b?b.name:'',loc.pos||'']}
@@ -822,9 +872,10 @@ const NAV=[
  {g:'Colecciones'},
  {r:'cepas',l:'Cepas',i:'strain',t:'strains'},{r:'plasmidos',l:'Plásmidos',i:'plasmid',t:'plasmids'},{r:'oligos',l:'Oligos',i:'oligo',t:'oligos'},{r:'reactivos',l:'Reactivos',i:'reagent',t:'reagents'},{r:'congelador',l:'Congelador',i:'freezer',t:'boxes'},
  {g:'Grupo'},
- {r:'experimentos',l:'Experimentos',i:'exp',t:'experiments'},{r:'protocolos',l:'Protocolos',i:'protocol',t:'protocols'},{r:'tesis',l:'Tesis',i:'thesis',t:'theses'},
+ {r:'experimentos',l:'Experimentos',i:'exp',t:'experiments'},{r:'preparaciones',l:'Preparaciones',i:'prep',t:'preps'},{r:'protocolos',l:'Protocolos',i:'protocol',t:'protocols'},{r:'tesis',l:'Tesis',i:'thesis',t:'theses'},
  {g:'Herramientas'},
  {r:'calculadoras',l:'Calculadoras',i:'calc'},
+ {r:'mapas',l:'Mapas',i:'map'},
  {r:'geles',l:'Geles',i:'gel'},
  {r:'secuenciacion',l:'Secuenciación',i:'seq'},
  {g:'Personal'},
@@ -897,7 +948,7 @@ function listBody(type){
 }
 function emptyList(type){
  const t=T[type];
- const msg={experiments:'Un experimento ata todo lo demás: las cepas y plásmidos que usaste, el protocolo que seguiste, los geles que salieron y lo que concluiste.',strains:'Registra cada cepa con su glicerol: descripción, marcadores, plásmidos que porta y en qué hueco del congelador está.',plasmids:'Cada plásmido con su vector base, inserto, marcadores, tamaño y dónde está el ADN.',oligos:'Pega la secuencia y se calculan longitud, %GC y Tm. Las colas en minúsculas se separan de la parte que hibrida.',reagents:'Stock, caducidades y una lista de pedidos que cualquiera del grupo puede completar.'}[type];
+ const msg={preps:'Cada tanda de proteína purificada: cuánta salió, en qué tampón, cuántas alícuotas y en qué caja del congelador están.',experiments:'Un experimento ata todo lo demás: las cepas y plásmidos que usaste, el protocolo que seguiste, los geles que salieron y lo que concluiste.',strains:'Registra cada cepa con su glicerol: descripción, marcadores, plásmidos que porta y en qué hueco del congelador está.',plasmids:'Cada plásmido con su vector base, inserto, marcadores, tamaño y dónde está el ADN.',oligos:'Pega la secuencia y se calculan longitud, %GC y Tm. Las colas en minúsculas se separan de la parte que hibrida.',reagents:'Stock, caducidades y una lista de pedidos que cualquiera del grupo puede completar.'}[type];
  return `<div class="empty">${ic(t.icon)}<h2>Aún no hay ${t.label.toLowerCase()}</h2><p>${msg}</p>${S.canWrite?`<div class="vacts"><button class="btn primary" data-a="new" data-type="${type}">${ic('plus')}${t.nuevo}</button><button class="btn" data-a="go-import" data-type="${type}">${ic('import')}Importar desde Excel</button></div>`:''}</div>`;
 }
 
@@ -1112,7 +1163,7 @@ function setBody(){
   <section class="card"><h2>Reglas de Firebase</h2><p class="small mute">Las funciones nuevas usan colecciones que las reglas todavía no permiten. Si al guardar sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y sustituye la lista de colecciones que ya hay por esta, dentro de <span class="mono">match /{coleccion}/{id}</span>. Luego pulsa Publicar.</p><pre class="rulebox mono">['strains', 'plasmids', 'oligos', 'reagents', 'protocols',
  'boxes', 'theses', 'milestones', 'meta',
  'experiments', 'gels', 'gelimgs',
- 'chroms', 'seqruns', 'preps']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
+ 'chroms', 'seqruns', 'preps', 'plasmidseq']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
    <p class="small mute" style="margin-top:10px">Para sumar a alguien, añade su correo a la lista de acceso (consola de Firebase → Firestore Database → Reglas) y pásale la dirección de la web. Aparecerá aquí cuando entre por primera vez.</p></section>
  </div><div class="stack">
   <section class="card stack"><h2>Exportar</h2><p class="small mute">CSV con punto y coma, listo para abrir en Excel. Caja y posición van en columnas separadas, así que se puede volver a importar.</p><div class="vacts">${TK.map(t=>`<button class="btn sm" data-a="export" data-type="${t}">${ic('download')}${T[t].label}</button>`).join('')}</div><div class="vacts"><button class="btn sm" data-a="backup-json">${ic('download')}Copia completa (JSON)</button></div></section>
@@ -1280,11 +1331,18 @@ function detailBody(type,d){
   h+=locSection(d);
   h+=linkList('Cepas que lo portan',[...S.data.strains.values()].filter(x=>(x.plasmids||[]).includes(d._id)).map(k=>refLink('strains',k._id)));
   h+=linkList('Oligos asociados',[...S.data.oligos.values()].filter(x=>x.plasmid===d._id).map(k=>refLink('oligos',k._id)));
+  h+=`<section class="dsec"><h3>Mapa</h3>${d.seqLen?`<p class="small mute">Secuencia guardada, ${Number(d.seqLen).toLocaleString('es-ES')} pb.</p>`:'<p class="small mute">Todavía no tiene la secuencia guardada.</p>'}<div class="pacts"><a class="btn sm" href="#mapas/${esc(d._id)}" data-a="close-drawer">${ic('map')}${d.seqLen?'Ver el mapa':'Añadir la secuencia'}</a></div></section>`;
  }else if(type==='oligos'){
   h+=`<section class="dsec"><h3>Secuencia 5'→3'</h3><div class="seqbox">${seqHTML(d.seq)}</div><div class="seqstats">${seqStatsHTML(d.seq)}</div><div class="pacts"><button class="btn sm" data-a="copy-seq">${ic('copy')}Copiar</button><button class="btn sm" data-a="copy-rc">${ic('swap')}Copiar complementaria inversa</button><button class="btn sm" data-a="pcr-oligo">${ic('calc')}Calcular PCR</button></div></section>`;
   h+=`<dl class="kvs">${kv('Diana',esc(d.target))}${kv('Uso',esc(d.purpose))}${kv('Oligo pareja',refLink('oligos',d.partner))}${kv('Plásmido',refLink('plasmids',d.plasmid))}${kv('Proveedor',esc(d.supplier))}${kv('Stock',d.conc!=null&&d.conc!==''?`<span class="mono">${esc(d.conc)} µM</span>`:'')}${notesKV(d)}</dl>`;
   h+=linkList('Lo usan como pareja',[...S.data.oligos.values()].filter(x=>x.partner===d._id&&x._id!==d.partner).map(k=>refLink('oligos',k._id)));
   h+=locSection(d);
+ }else if(type==='preps'){
+  const mg=prepMg(d),al=numV(d.aliquots),vol=numV(d.vol);
+  h+=`<dl class="kvs">${kv('Etiqueta',esc(d.tag))}${kv('Purificada el',d.date&&fmtD(d.date))}${kv('Inducción',esc(d.induction))}${kv('Purificación',esc(d.method))}${kv('Tampón final',esc(d.buffer))}${kv('Pureza',esc(d.purity))}${kv('Cultivo de partida',numV(d.cultureV)>0?fmtN(numV(d.cultureV),0)+' mL':'')}</dl>`;
+  if(numV(d.conc)>0||vol>0)h+=`<section class="dsec"><h3>Cuánta hay</h3><div class="cstats">${numV(d.conc)>0?`<div class="cstat"><b>${fmtN(numV(d.conc),2)}</b><span>mg/mL</span></div>`:''}${vol>0?`<div class="cstat"><b>${fmtN(vol,0)} µL</b><span>en total</span></div>`:''}${mg!=null?`<div class="cstat"><b>${fmtN(mg,2)} mg</b><span>de proteína</span></div>`:''}${al>0&&vol>0?`<div class="cstat"><b>${Math.round(al)} × ${fmtN(vol/al,0)} µL</b><span>alícuotas${mg!=null?` · ${fmtN(mg/al*1000,0)} µg cada una`:''}</span></div>`:''}${mg!=null&&numV(d.cultureV)>0?`<div class="cstat"><b>${fmtN(mg/numV(d.cultureV)*1000,1)}</b><span>mg por litro de cultivo</span></div>`:''}</div></section>`;
+  const lk=[d.host&&refLink('strains',d.host),d.plasmid&&refLink('plasmids',d.plasmid),d.exp&&refLink('experiments',d.exp)].filter(Boolean);
+  h+=linkList('Viene de',lk);
  }else if(type==='experiments'){
   h+=`<dl class="kvs">${kv('Tipo',esc(d.kind))}${kv('Fechas',[d.date&&fmtD(d.date),d.end&&fmtD(d.end)].filter(Boolean).join(' – '))}</dl>`;
   if(d.aim)h+=`<section class="dsec"><h3>Objetivo</h3><p class="dtxt">${esc(d.aim)}</p></section>`;
@@ -1294,6 +1352,8 @@ function detailBody(type,d){
   h+=linkList('Protocolos',(d.protocols||[]).map(x=>refLink('protocols',x)));
   const gs=[...S.data.gels.values()].filter(g=>g.exp===d._id).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
   h+=`<section class="dsec"><h3>Geles</h3>${gs.length?`<div class="gelmini">${gs.map(g=>`<a class="gelcard" href="#geles/${esc(g._id)}">${g.thumb?`<img src="${esc(g.thumb)}" alt="" loading="lazy">`:'<div class="gelph"></div>'}<div class="gelcard-b"><b>${esc(g.title||'Sin título')}</b><span class="small mute">${esc(g.date?fmtD(g.date):'')}</span></div></a>`).join('')}</div>`:'<p class="small mute">Todavía no hay ninguno.</p>'}${S.canWrite?`<div class="pacts"><button class="btn sm" data-a="gel-forexp" data-id="${esc(d._id)}">${ic('gel')}Añadir un gel</button></div>`:''}</section>`;
+  const prs=[...S.data.preps.values()].filter(x=>x.exp===d._id).sort((a,b)=>natCmp(a.code,b.code));
+  if(prs.length)h+=linkList('Preparaciones de proteína',prs.map(x=>refLink('preps',x._id)));
   if(d.result)h+=`<section class="dsec"><h3>Resultado</h3><p class="dtxt">${esc(d.result)}</p></section>`;
   if(d.conclusion)h+=`<section class="dsec"><h3>Conclusión</h3><p class="dtxt">${esc(d.conclusion)}</p></section>`;
  }else if(type==='reagents'){
@@ -1470,7 +1530,7 @@ function addMenu(){
  if(!S.canWrite){toast('Tienes acceso de solo lectura.');return}
  openSheet('Añadir',TK.map(t=>`<button data-a="new" data-type="${t}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo}</button>`).join('')+`<button data-a="new-box">${ic('freezer')}Nueva caja</button><button data-a="proto-new">${ic('protocol')}Nuevo protocolo</button>${S.uid?`<button data-a="note-new">${ic('note')}Nota privada</button>`:''}<a href="#importar">${ic('import')}Importar una lista</a>`);
 }
-function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['experimentos','Experimentos','exp'],['calculadoras','Calculadoras','calc'],['geles','Geles','gel'],['secuenciacion','Secuenciación','seq'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
+function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['experimentos','Experimentos','exp'],['preparaciones','Preparaciones','prep'],['calculadoras','Calculadoras','calc'],['mapas','Mapas','map'],['geles','Geles','gel'],['secuenciacion','Secuenciación','seq'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
 function cellMenu(box,pos){
  if(!S.canWrite)return;const b=S.data.boxes.get(box);
  openSheet(`${b?b.name:'Caja'} · ${pos}`,['strains','plasmids','oligos'].map(t=>`<button data-a="new-at" data-type="${t}" data-box="${box}" data-pos="${pos}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo} aquí</button>`).join(''));
@@ -1759,6 +1819,7 @@ function a280OutHTML(){
  return `<section class="card"><h2>${esc(P.name||'Concentración')}</h2>
   <div class="cstats">${r.mgml!=null?`<div class="cstat"><b>${fmtN(r.mgml,r.mgml<1?3:2)}</b><span>mg/mL</span></div>`:''}${r.uM!=null?`<div class="cstat"><b>${r.uM>=1000?fmtN(r.uM/1000,2)+' mM':fmtN(r.uM,r.uM<10?2:1)+' µM'}</b><span>concentración molar</span></div>`:''}${r.totmg!=null?`<div class="cstat"><b>${fmtN(r.totmg,r.totmg<1?3:2)} mg</b><span>en ${fmtN(numV(P.vol),2)} mL</span></div>`:''}</div>
   <dl class="kvs small">${r.eps?`<dt>ε280</dt><dd class="mono">${Math.round(r.eps).toLocaleString('es-ES')} M⁻¹cm⁻¹</dd>`:''}${r.mw?`<dt>Peso molecular</dt><dd class="mono">${fmtN(r.mw,0)} Da (${fmtN(r.mw/1000,2)} kDa)</dd>`:''}${r.abs01?`<dt>Abs 0,1 %</dt><dd class="mono">${fmtN(r.abs01,3)}</dd>`:''}<dt>A280 corregida</dt><dd class="mono">${fmtN(numV(P.A)*(numV(P.dil)||1)/(numV(P.path)||1),3)}${(numV(P.dil)||1)!==1||(numV(P.path)||1)!==1?` <span class="mute">(×${fmtN(numV(P.dil)||1,2)}${(numV(P.path)||1)!==1?`, ${fmtN(numV(P.path),2)} cm`:''})</span>`:''}</dd></dl>
+  ${S.canWrite&&r.mgml!=null?`<div class="vacts"><button class="btn" data-a="a280-prep">${ic('prep')}Guardar como preparación</button></div>`:''}
   ${hints?`<div class="hints">${hints}</div>`:''}
  </section>
  ${numV(P.tgt)>0?`<section class="card"><h2>Dilución</h2>${r.dilErr?`<p class="hint warn">${esc(r.dilErr)}</p>`:`<p class="small" style="color:var(--fg-2)">Diluye 1:${fmtN(r.dilF,r.dilF<10?2:1)} para llegar a ${fmtN(numV(P.tgt),3)} ${esc(P.tgtU)}.</p>${r.dilStock!=null?`<table class="ctbl"><tbody><tr><td>Proteína</td><td class="n"><b>${fmtN(r.dilStock)}</b> ${vu}</td></tr><tr><td>Tampón</td><td class="n"><b>${fmtN(r.dilBuf)}</b> ${vu}</td></tr><tr class="tot"><td>Total</td><td class="n">${fmtN(numV(P.tgtV))} ${vu}</td></tr></tbody></table>${r.dilStock<(vu==='µL'?0.5:0.0005)?'<p class="hint warn">Volumen de proteína muy pequeño para pipetear: haz una dilución intermedia.</p>':''}`:'<p class="small mute">Indica el volumen final para ver cuánto poner de cada cosa.</p>'}`}</section>`:''}
@@ -3212,7 +3273,7 @@ function sqEdBody(){
  </section>
  <section class="card"><h2>Lo que esperabas</h2>
   <div class="fld"><div class="seg">${[['full','Plásmido completo'],['region','Solo el inserto o una región']].map(([k,l])=>`<button data-a="sq-mode" data-v="${k}" aria-pressed="${Q.mode===k}">${l}</button>`).join('')}</div></div>
-  <div class="vacts" style="margin:8px 0"><label class="btn">${ic('plus')}Subir archivo<input type="file" accept=".fasta,.fa,.fna,.seq,.gb,.gbk,.genbank,.txt,text/plain" id="sq-file-exp" hidden></label>${nExp?`<span class="small mute" style="align-self:center">${nExp.toLocaleString('es-ES')} bases</span>`:''}</div>
+  <div class="vacts" style="margin:8px 0"><label class="btn">${ic('plus')}Subir archivo<input type="file" accept=".fasta,.fa,.fna,.seq,.gb,.gbk,.genbank,.txt,text/plain" id="sq-file-exp" hidden></label>${nExp?`<span class="small mute" style="align-self:center">${nExp.toLocaleString('es-ES')} bases</span>`:''}${Q.plasmid&&(S.data.plasmids.get(Q.plasmid)||{}).seqLen?`<button class="btn" data-a="sq-usemap">${ic('map')}Usar la guardada</button>`:''}</div>
   <textarea data-sqk="expSeq" rows="4" class="seqarea" spellcheck="false" placeholder="${Q.mode==='full'?'Secuencia completa del constructo que esperas':'El inserto, la unión, la etiqueta… lo que quieras comprobar'}">${esc(Q.expSeq)}</textarea>
   <label class="switch"><input type="checkbox" data-sqchk="circular"${Q.circular?' checked':''}> Es un plásmido circular</label>
   <p class="help">Al ser circular, da igual por dónde empiece cada secuencia y en qué hebra venga: se gira y se le da la vuelta sola para compararlas.</p>
@@ -3221,6 +3282,431 @@ function sqEdBody(){
  </div><div class="calc-out">${out}</div></div>`;
 }
 function sqBody(){return S.sub?sqEdBody():sqListBody()}
+
+/* --- Mapas de plásmidos --- */
+/* Paleta categórica validada para los dos temas */
+const PM_PAL_L=['#1a7f4e','#1d5fd8','#a72a78','#c2730a','#0a8ca0','#c62222','#7447d6','#7d6a00'];
+const PM_PAL_D=['#2a9c63','#5283e0','#cf4e8e','#b67a24','#1f97aa','#d85a5a','#8a6ed8','#95892c'];
+const PM_TYPES=[['cds','CDS'],['prom','Promotor'],['term','Terminador'],['rbs','RBS'],['ori','Origen'],['res','Resistencia'],['tag','Etiqueta'],['site','Sitio'],['misc','Otro']];
+const PM_TL=Object.fromEntries(PM_TYPES);
+function pmColor(t){const i=PM_TYPES.findIndex(x=>x[0]===t);if(i<0||i>7)return 'var(--fg-3)';return (S.dark?PM_PAL_D:PM_PAL_L)[i]}
+const PM_RES=/\b(bla|amp|aph|npt|kan|km|cat|cam|cm|aac|aad|gent|gm|tet|tc|sul|spec|sm|str|erm|hyg|zeo|puro|nourseo)\w*/i;
+const PM_TAG=/(his[-_ ]?tag|6?x?his|flag|\bha\b|myc|strep|sumo|gst\b|mbp\b|thioredoxin|trx)/i;
+function pmType(gbType,name){
+ const t=String(gbType||'').toLowerCase(),n=String(name||'');
+ if(/promoter/.test(t))return 'prom';
+ if(/terminator/.test(t))return 'term';
+ if(/^rbs$|ribosome/.test(t))return 'rbs';
+ if(/rep_origin|^ori/.test(t))return 'ori';
+ if(/primer_bind|protein_bind|misc_recomb|misc_binding|oriT/i.test(t))return 'site';
+ if(/cds|gene|mat_peptide/.test(t)){
+  if(PM_TAG.test(n))return 'tag';
+  if(/^(amp|kan|km|cm|cam|chlor|gen|gm|tet|tc|spec|sp|sm|str|erm|hyg|zeo|bleo|puro|nat|nour|apra|rif)\w{0,6}r\b/i.test(n))return 'res';
+  if(/resistan|resistenc/i.test(n))return 'res';
+  if(PM_RES.test(n)&&/^(bla|cat|tet|aph|npt|aac|aad|erm|sul|hyg)/i.test(n))return 'res';
+  return 'cds';
+ }
+ if(PM_TAG.test(n))return 'tag';
+ return 'misc';
+}
+/* motivos para autoanotar */
+const PM_MOTIFS=[
+ ['Promotor T7','TAATACGACTCACTATAG','prom'],['Promotor SP6','ATTTAGGTGACACTATAG','prom'],['Promotor T3','AATTAACCCTCACTAAAGG','prom'],
+ ['Promotor lac','TTTACACTTTATGCTTCCGGCTCGTATGTTG','prom'],['Promotor tac','TTGACAATTAATCATCGGCTCGTATAATG','prom'],
+ ['Promotor araBAD','TTATGACAACTTGACGGCTACATCATTCACTTTTTCTTCACAAC','prom'],
+ ['Promotor tetR','TCCCTATCAGTGATAGAGATTGACATCCCTATCAGTGATAGAGATA','prom'],
+ ['Terminador T7','CTAGCATAACCCCTTGGGGCCTCTAAACGGGTCTTGAGGGGTTTTTTG','term'],
+ ['Terminador rrnB T1','CTGTTGTTTGTCGGTGAACGCTCTCC','term'],
+ ['Operador lac','GGAATTGTGAGCGGATAACAATT','site'],['Sitio CAP','GTGAGTTAGCTCACTCATTAGGCA','site'],
+ ['Shine-Dalgarno','AGGAGG','rbs'],['RBS fuerte','AGGAGGACAGCTAAG','rbs'],
+ ['loxP','ATAACTTCGTATAATGTATGCTATACGAAGTTAT','site'],['FRT','GAAGTTCCTATTCTCTAGAAAGTATAGGAACTTC','site'],
+ ['attB1','ACAAGTTTGTACAAAAAAGCAGGCT','site'],['attB2','ACCCAGCTTTCTTGTACAAAGTGGT','site'],
+ ['oriT (RP4)','TTGACAGGATATATTGGCGGGTAAAC','site'],
+ ['M13 directo','GTAAAACGACGGCCAGT','site'],['M13 reverso','CAGGAAACAGCTATGAC','site'],
+ ['His-tag','CACCACCACCACCACCAC','tag'],['FLAG-tag','GACTACAAAGACGATGACGACAAG','tag'],
+ ['HA-tag','TACCCATACGATGTTCCAGATTACGCT','tag'],['Strep-tag II','TGGAGCCACCCGCAGTTCGAAAAA','tag'],
+ ['Sitio TEV','GAAAACCTGTATTTTCAGGGC','tag'],['Conector GS','GGTGGCGGTTCTGGCGGTGGTTCT','tag'],
+ ['ori pUC','TTGAGATCCTTTTTTTCTGCGCGTAATCT','ori'],['ori pBR322','GGTCTGACGCTCAGTGGAACGA','ori'],
+ ['KmR (aph)','ATGATTGAACAAGATGGATTGCACGCAGG','res'],['ApR (bla)','ATGAGTATTCAACATTTCCGTGTCGCCCTT','res'],
+ ['CmR (cat)','ATGGAGAAAAAAATCACTGGATATACCACC','res'],['GmR (aacC1)','ATGTTACGCAGCAGCAACGATGTTACGCAG','res'],
+ ['TcR (tetA)','ATGAAATCTAACAATGCGCTCATCGTCATC','res'],
+ ['sacB','ATGAACATCAAAAAGTTTGCAAAACAAGCAACAGTATTAACCTTTACCACC','cds'],
+ ['sfGFP','ATGAGCAAAGGAGAAGAACTTTTCACTGGA','cds'],['eGFP','ATGGTGAGCAAGGGCGAGGAGCTGTTCACC','cds'],
+ ['mCherry','ATGGTGAGCAAGGGCGAGGAGGATAACATG','cds'],['mScarlet','ATGGTGAGCAAGGGCGAGGCAGTGATCAAG','cds'],
+ ['lacZ-alfa','ATGACCATGATTACGCCAAGCTTGCATGCC','cds']];
+/* enzimas: nombre, sitio, corte arriba, corte abajo, habitual, tipo IIS */
+const PM_ENZ=[['AatII','GACGTC',5,1],['Acc65I','GGTACC',1,5],['AclI','AACGTT',2,4],['AfeI','AGCGCT',3,3],['AflII','CTTAAG',1,5,1],
+['AgeI','ACCGGT',1,5,1],['ApaI','GGGCCC',5,1,1],['ApaLI','GTGCAC',1,5],['AscI','GGCGCGCC',2,6,1],['AseI','ATTAAT',2,4],
+['AvrII','CCTAGG',1,5,1],['BamHI','GGATCC',1,5,1],['BbsI','GAAGAC',8,12,1,1],['BclI','TGATCA',1,5],['BglII','AGATCT',1,5,1],
+['BmtI','GCTAGC',5,1],['BsaI','GGTCTC',7,11,1,1],['BsmBI','CGTCTC',5,9,1,1],['BsiWI','CGTACG',1,5],['BspEI','TCCGGA',1,5],
+['BspHI','TCATGA',1,5],['BsrGI','TGTACA',1,5],['BssHII','GCGCGC',1,5],['BstBI','TTCGAA',2,4],['BstZ17I','GTATAC',3,3],
+['ClaI','ATCGAT',2,4,1],['DraI','TTTAAA',3,3],['EagI','CGGCCG',1,5],['EcoRI','GAATTC',1,5,1],['EcoRV','GATATC',3,3,1],
+['FseI','GGCCGGCC',6,2],['FspI','TGCGCA',3,3],['HindIII','AAGCTT',1,5,1],['HpaI','GTTAAC',3,3],['KpnI','GGTACC',5,1,1],
+['MfeI','CAATTG',1,5],['MluI','ACGCGT',1,5,1],['MscI','TGGCCA',3,3],['NaeI','GCCGGC',3,3],['NarI','GGCGCC',2,4],
+['NcoI','CCATGG',1,5,1],['NdeI','CATATG',2,4,1],['NheI','GCTAGC',1,5,1],['NotI','GCGGCCGC',2,6,1],['NruI','TCGCGA',3,3],
+['NsiI','ATGCAT',5,1],['PacI','TTAATTAA',5,3],['PciI','ACATGT',1,5],['PmeI','GTTTAAAC',4,4,1],['PmlI','CACGTG',3,3],
+['PsiI','TTATAA',3,3],['PstI','CTGCAG',5,1,1],['PvuI','CGATCG',4,2],['PvuII','CAGCTG',3,3,1],['SacI','GAGCTC',5,1,1],
+['SacII','CCGCGG',4,2],['SalI','GTCGAC',1,5,1],['SbfI','CCTGCAGG',6,2],['ScaI','AGTACT',3,3],['SfoI','GGCGCC',3,3],
+['SmaI','CCCGGG',3,3,1],['SnaBI','TACGTA',3,3],['SpeI','ACTAGT',1,5,1],['SphI','GCATGC',5,1,1],['SspI','AATATT',3,3],
+['StuI','AGGCCT',3,3],['SwaI','ATTTAAAT',4,4],['XbaI','TCTAGA',1,5,1],['XhoI','CTCGAG',1,5,1],['XmaI','CCCGGG',1,5,1],
+['ZraI','GACGTC',3,3],['SapI','GCTCTTC',8,11,0,1],['Esp3I','CGTCTC',5,9,0,1],['AarI','CACCTGC',11,15,0,1]]
+ .map(e=>({n:e[0],s:e[1],t:e[2],b:e[3],c:!!e[4],ii:!!e[5]}));
+const PM_IUPAC={A:'A',C:'C',G:'G',T:'T',R:'AG',Y:'CT',S:'CG',W:'AT',K:'GT',M:'AC',B:'CGT',D:'AGT',H:'ACT',V:'ACG',N:'ACGT'};
+function pmFind(seq,pat,circular){
+ const hay=circular&&seq.length>pat.length?seq+seq.slice(0,pat.length-1):seq;
+ const re=new RegExp([...pat].map(c=>{const v=PM_IUPAC[c]||c;return v.length>1?'['+v+']':v}).join(''),'g');
+ const out=[];let m;while((m=re.exec(hay))){if(m.index<seq.length)out.push(m.index);re.lastIndex=m.index+1}
+ return out;
+}
+function pmSites(seq,e,circular){
+ const r=revcomp(e.s).toUpperCase();
+ const f=pmFind(seq,e.s,circular).map(i=>({pos:i,strand:1}));
+ const b=r===e.s?[]:pmFind(seq,r,circular).map(i=>({pos:i,strand:-1}));
+ return f.concat(b).sort((x,y)=>x.pos-y.pos);
+}
+function pmCut(e,s,L){const p=s.strand===1?s.pos+e.t:s.pos+e.s.length-e.b;return ((p%L)+L)%L}
+function pmUnique(seq,circular){
+ const out=[];for(const e of PM_ENZ){if(!e.c)continue;const s=pmSites(seq,e,circular);if(s.length===1)out.push({n:e.n,pos:pmCut(e,s[0],seq.length)})}
+ return out.sort((a,b)=>a.pos-b.pos);
+}
+function pmOrfs(seq,circular,minNt){
+ const out=[],L=seq.length;
+ for(const st of [1,-1]){
+  const s=st===1?seq:revcomp(seq).toUpperCase();
+  const ext=circular?s+s.slice(0,Math.min(3000,L)):s;
+  for(let f=0;f<3;f++){let start=-1;
+   for(let i=f;i+2<ext.length;i+=3){const c=ext.substr(i,3);
+    if(start<0&&c==='ATG')start=i;
+    else if(start>=0&&(c==='TAA'||c==='TAG'||c==='TGA')){
+     if(i+3-start>=minNt&&start<L){const a=st===1?start:L-(i+3),b=st===1?i+3:L-start;
+      out.push({s:((a%L)+L)%L,e:b>L?b-L:b,st,aa:Math.round((i+3-start)/3)-1})}
+     start=-1;}
+   }}
+ }
+ return out;
+}
+/* --- lectura de archivos --- */
+function pmParseGB(txt){
+ const out={name:'',seq:'',circular:false,features:[]};
+ const loc=txt.match(/^LOCUS\s+(\S+)([^\n]*)/m);
+ if(loc){out.name=loc[1];out.circular=/circular/i.test(loc[2])}
+ const oi=txt.search(/^ORIGIN/m);
+ if(oi>=0)out.seq=sqClean(txt.slice(oi).split('\n').slice(1).join('\n'));
+ const fi=txt.search(/^FEATURES/m);
+ if(fi>=0){
+  const lines=txt.slice(fi,oi<0?undefined:oi).split(/\r?\n/).slice(1);
+  let cur=null;
+  const push=()=>{if(cur&&!/^(source|gene)$/i.test(cur.type))for(const r of cur.ranges)out.features.push({n:cur.name||cur.type,t:pmType(cur.type,cur.name),s:r[0],e:r[1],st:cur.strand})};
+  for(const line of lines){
+   const m=line.match(/^ {1,8}(\S+)\s+(.+)$/);
+   if(m){push();const clean=m[2].replace(/[<>]/g,'');const ranges=[];const rr=/(\d+)\.\.(\d+)/g;let q;
+    while((q=rr.exec(clean)))ranges.push([+q[1]-1,+q[2]]);
+    if(!ranges.length){const s1=clean.match(/(\d+)/);if(s1)ranges.push([+s1[1]-1,+s1[1]])}
+    cur={type:m[1],strand:/complement/.test(m[2])?-1:1,ranges,name:''};
+   }else if(cur){
+    const q=line.match(/^\s*\/(label|gene|product|locus_tag|standard_name|note)="?([^"]*)"?/);
+    if(q&&!cur.name&&q[2])cur.name=q[2].slice(0,60);
+   }
+  }
+  push();
+  out.features=out.features.filter(f=>f.e-f.s<out.seq.length*0.98||!out.seq.length);
+ }
+ return out;
+}
+function pmParseDna(buf){
+ const dv=new DataView(buf),u8=new Uint8Array(buf),dec=new TextDecoder('utf-8');
+ const out={name:'',seq:'',circular:false,features:[]};
+ if(u8[0]!==0x09)throw new Error('No parece un archivo .dna de SnapGene');
+ let p=0;
+ while(p+5<=u8.length){
+  const type=u8[p],len=dv.getUint32(p+1,false);p+=5;
+  if(p+len>u8.length)break;
+  const slice=buf.slice(p,p+len);
+  if(type===0){out.circular=!!(u8[p]&1);out.seq=sqClean(dec.decode(buf.slice(p+1,p+len)))}
+  else if(type===10){
+   const d=new DOMParser().parseFromString(dec.decode(slice),'text/xml');
+   d.querySelectorAll('Feature').forEach(f=>{
+    const nm=f.getAttribute('name')||'',ty=f.getAttribute('type')||'misc_feature';
+    const st=f.getAttribute('directionality')==='2'?-1:1;
+    f.querySelectorAll('Segment').forEach(sg=>{
+     const r=(sg.getAttribute('range')||'').split('-');
+     if(r.length===2){const a=+r[0]-1,b=+r[1];if(isFinite(a)&&isFinite(b))out.features.push({n:nm||ty,t:pmType(ty,nm),s:a,e:b,st})}
+    });
+   });
+  }
+  else if(type===6){const m=dec.decode(slice).match(/<CustomMapLabel>([^<]*)<\/CustomMapLabel>/);if(m)out.name=m[1]}
+  p+=len;
+ }
+ if(!out.seq)throw new Error('El archivo .dna no contiene una secuencia legible');
+ return out;
+}
+function pmParseAuto(name,data){
+ if(data instanceof ArrayBuffer){
+  if(new Uint8Array(data.slice(0,1))[0]===0x09)return pmParseDna(data);
+  data=new TextDecoder('utf-8').decode(data);
+ }
+ const t=String(data).trim();
+ if(/^LOCUS/m.test(t))return pmParseGB(t);
+ const p=sqParse(t);
+ if(!p.seq)throw new Error('No se ha reconocido el formato');
+ return {name:p.name||String(name||'').replace(/\.[^.]+$/,''),seq:p.seq,circular:/circular/i.test(t),features:[]};
+}
+/* --- exportación --- */
+const PM_GBT={cds:'CDS',prom:'promoter',term:'terminator',rbs:'RBS',ori:'rep_origin',res:'CDS',tag:'CDS',site:'misc_binding',misc:'misc_feature'};
+function pmToGB(P){
+ const L=P.seq.length;
+ const d=new Date(),M=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+ const today=`${String(d.getDate()).padStart(2,'0')}-${M[d.getMonth()]}-${d.getFullYear()}`;
+ let o=`LOCUS       ${(P.name||'construct').replace(/\s+/g,'_').slice(0,16).padEnd(16)} ${String(L).padStart(7)} bp ds-DNA     ${P.circular?'circular':'linear  '} SYN ${today}\n`;
+ o+=`DEFINITION  ${P.name||'construct'}\nACCESSION   .\nVERSION     .\nKEYWORDS    .\nSOURCE      synthetic DNA construct\n  ORGANISM  synthetic DNA construct\n`;
+ o+='FEATURES             Location/Qualifiers\n';
+ o+=`     source          1..${L}\n                     /organism="synthetic DNA construct"\n`;
+ for(const f of (P.features||[]).slice().sort((a,b)=>a.s-b.s)){
+  const loc=f.st===-1?`complement(${f.s+1}..${f.e})`:`${f.s+1}..${f.e}`;
+  o+=`     ${(PM_GBT[f.t]||'misc_feature').padEnd(15)} ${loc}\n                     /label="${String(f.n).replace(/"/g,'')}"\n`;
+ }
+ o+='ORIGIN\n';
+ for(let i=0;i<L;i+=60){let line=String(i+1).padStart(9)+' ';
+  for(let j=0;j<60;j+=10)line+=P.seq.substr(i+j,10).toLowerCase()+(j<50?' ':'');
+  o+=line.replace(/\s+$/,'')+'\n';}
+ return o+'//\n';
+}
+function pmToFasta(P){let o='>'+(P.name||'construct')+' '+P.seq.length+' pb '+(P.circular?'circular':'lineal')+'\n';
+ for(let i=0;i<P.seq.length;i+=70)o+=P.seq.substr(i,70)+'\n';return o}
+
+/* --- Mapas: dibujo --- */
+const pmDark=()=>{const t=document.documentElement.getAttribute('data-theme');if(t==='dark')return true;if(t==='light')return false;return !!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)};
+function pmCol(t){const i=PM_TYPES.findIndex(x=>x[0]===t);if(i<0||i>7)return pmDark()?'#72808e':'#768491';return (pmDark()?PM_PAL_D:PM_PAL_L)[i]}
+const PMNS='http://www.w3.org/2000/svg';
+const pmSv=(t,a={})=>{const e=document.createElementNS(PMNS,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e};
+function pmTick(L){const r=Math.pow(10,Math.max(2,Math.floor(Math.log10(Math.max(L,100)))-1));return L/r>14?r*2:r}
+function pmLay(fs,L){
+ const rows=[];const out=fs.map(f=>({...f}));
+ out.sort((a,b)=>(a.s-b.s)||(b.e-a.e));
+ for(const f of out){let r=0;while(rows[r]!==undefined&&rows[r]>f.s+0.0001)r++;rows[r]=f.e;f._r=r}
+ return {fs:out,rows:Math.max(1,rows.length)};
+}
+function pmCircSVG(P,opts){
+ const L=P.seq.length||1,W=620,H=620,cx=W/2,cy=H/2;
+ const lay=pmLay(P.features||[],L);
+ const R=Math.max(120,182-lay.rows*9);
+ const g=pmSv('svg',{viewBox:`0 0 ${W} ${H}`,class:'pmmap',role:'img','aria-label':`Mapa circular de ${P.name||'la construcción'}, ${L} pares de bases`});
+ const ang=p=>(p/L)*2*Math.PI-Math.PI/2, pt=(p,r)=>[cx+r*Math.cos(ang(p)),cy+r*Math.sin(ang(p))];
+ /* reserva del texto central */
+ const boxes=[[cx-96,cy-26,192,66]];
+ const free=(x,y,w,h)=>{for(const b of boxes)if(x<b[0]+b[2]&&x+w>b[0]&&y<b[1]+b[3]&&y+h>b[1])return false;boxes.push([x,y,w,h]);return true};
+ const label=(p,r,txt,cls,cw,fh)=>{
+  const[x,y]=pt(p,r),anc=x<cx-5?'end':(x>cx+5?'start':'middle');
+  const room=anc==='end'?x-4:(anc==='start'?W-4-x:Math.min(x,W-x)*2-8);
+  let t2=txt;
+  if(t2.length*cw>room){const k=Math.floor(room/cw)-1;if(k<6)return false;t2=t2.slice(0,k)+'…'}
+  const w=t2.length*cw,x0=anc==='end'?x-w:(anc==='start'?x:x-w/2);
+  if(y-fh/2<2||y+fh/2>H-2)return false;
+  if(!free(x0-1,y-fh/2-1,w+2,fh+2))return false;
+  const t=pmSv('text',{x,y,class:cls,'text-anchor':anc,'dominant-baseline':'middle'});t.textContent=t2;g.append(t);return true;
+ };
+ g.append(pmSv('circle',{cx,cy,r:R,fill:'none',stroke:'var(--line-2)','stroke-width':7}));
+ /* elementos */
+ const gap=Math.min(0.014,(2*Math.PI)/Math.max(L,1)*6);
+ lay.fs.forEach((f,i)=>{
+  const rr=R+14+f._r*17;
+  let a0=ang(f.s),a1=ang(f.e<f.s?f.e+L:f.e);
+  if(a1-a0>gap*2){a0+=gap/2;a1-=gap/2}
+  const big=(a1-a0)>Math.PI?1:0;
+  const x0=cx+rr*Math.cos(a0),y0=cy+rr*Math.sin(a0),x1=cx+rr*Math.cos(a1),y1=cy+rr*Math.sin(a1);
+  const path=pmSv('path',{d:`M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${rr} ${rr} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`,fill:'none',stroke:pmCol(f.t),'stroke-width':9,'stroke-linecap':'butt',class:'pmft','data-i':String(i)});
+  const ti=pmSv('title');ti.textContent=`${f.n} · ${PM_TL[f.t]} · ${f.s+1}–${f.e} ${f.st===-1?'(−)':'(+)'}`;path.append(ti);
+  g.append(path);
+ });
+ /* nombres de los elementos, los más grandes primero */
+ lay.fs.map((f,i)=>({f,i,sp:(f.e<f.s?f.e+L:f.e)-f.s})).sort((a,b)=>b.sp-a.sp).forEach(({f,sp})=>{
+  if(sp/L<0.02)return;
+  const mid=f.s+sp/2,rr=R+14+f._r*17;
+  label(mid,rr+12,(f.st===-1?'◂ ':'')+String(f.n).slice(0,26)+(f.st===1?' ▸':''),'pml',5.6,11);
+ });
+ /* cortadores únicos */
+ (opts.enz||[]).forEach(m=>{
+  const[a,b]=pt(m.pos,R-3.5),[c,d]=pt(m.pos,R+3.5);
+  if(!label(m.pos,R-16,m.n,'pme',5.3,10))return;
+  g.append(pmSv('line',{x1:a,y1:b,x2:c,y2:d,stroke:'var(--fg-2)','stroke-width':1.4}));
+ });
+ /* coordenadas */
+ const step=pmTick(L);
+ for(let p=0;p<L;p+=step){
+  const[a,b]=pt(p,R-4),[c,d]=pt(p,R-9);
+  if(!label(p,R-32,p===0?'1':p.toLocaleString('es-ES'),'pmt',5,9))continue;
+  g.append(pmSv('line',{x1:a,y1:b,x2:c,y2:d,stroke:'var(--fg-3)','stroke-width':1}));
+ }
+ const n1=pmSv('text',{x:cx,y:cy-9,class:'pmn','text-anchor':'middle'});n1.textContent=String(P.code||P.name||'construcción').slice(0,22);
+ const n2=pmSv('text',{x:cx,y:cy+13,class:'pmb','text-anchor':'middle'});n2.textContent=L.toLocaleString('es-ES')+' pb';
+ const n3=pmSv('text',{x:cx,y:cy+31,class:'pme2','text-anchor':'middle'});n3.textContent=fmtN(codGC(P.seq),1)+' % GC';
+ g.append(n1,n2,n3);
+ return g;
+}
+function pmLinSVG(P,opts){
+ const L=P.seq.length||1,W=760,pad=38;
+ const lay=pmLay(P.features||[],L);
+ const H=104+lay.rows*23;
+ const g=pmSv('svg',{viewBox:`0 0 ${W} ${H}`,class:'pmmap',role:'img','aria-label':`Mapa lineal de ${P.name||'la construcción'}`});
+ const x=p=>pad+(p/L)*(W-2*pad);
+ const boxes=[],free=(a,b,w,h)=>{for(const q of boxes)if(a<q[0]+q[2]&&a+w>q[0]&&b<q[1]+q[3]&&b+h>q[1])return false;boxes.push([a,b,w,h]);return true};
+ /* cortadores únicos, en dos alturas */
+ (opts.enz||[]).forEach(m=>{
+  const w=m.n.length*5.3;let y=null;
+  for(const yy of [30,16]){if(free(x(m.pos)-w/2,yy-6,w+3,12)){y=yy;break}}
+  if(y===null)return;
+  g.append(pmSv('line',{x1:x(m.pos),y1:y+7,x2:x(m.pos),y2:57,stroke:'var(--line-2)','stroke-width':1}));
+  const t=pmSv('text',{x:x(m.pos),y,class:'pme','text-anchor':'middle','dominant-baseline':'middle'});t.textContent=m.n;g.append(t);
+ });
+ g.append(pmSv('line',{x1:pad,y1:60,x2:W-pad,y2:60,stroke:'var(--line-2)','stroke-width':6}));
+ const step=pmTick(L);
+ for(let p=0;p<=L;p+=step){
+  g.append(pmSv('line',{x1:x(p),y1:64,x2:x(p),y2:69,stroke:'var(--fg-3)'}));
+  const t=pmSv('text',{x:x(p),y:79,class:'pmt','text-anchor':'middle'});t.textContent=(p===0?1:p).toLocaleString('es-ES');g.append(t);
+ }
+ const ys=f=>90+f._r*23;
+ lay.fs.forEach((f,i)=>{
+  const w=Math.max(3,x(f.e)-x(f.s)-2),y=ys(f);
+  const r=pmSv('rect',{x:x(f.s)+1,y,width:w,height:12,rx:3,fill:pmCol(f.t),class:'pmft','data-i':String(i)});
+  const ti=pmSv('title');ti.textContent=`${f.n} · ${PM_TL[f.t]} · ${f.s+1}–${f.e} ${f.st===-1?'(−)':'(+)'}`;r.append(ti);g.append(r);
+  boxes.push([x(f.s)+1,y,w,12]);
+ });
+ lay.fs.slice().sort((a,b)=>(b.e-b.s)-(a.e-a.s)).forEach(f=>{
+  const txt=(f.st===-1?'◂ ':'')+String(f.n).slice(0,28)+(f.st===1?' ▸':'');
+  const w=txt.length*5.6,y=ys(f),bw=Math.max(3,x(f.e)-x(f.s)-2);
+  if(bw>w+10){const t=pmSv('text',{x:x(f.s)+6,y:y+9,class:'pmlin'});t.textContent=txt;g.append(t);return}
+  for(const[a,al] of [[x(f.e)+5,'start'],[x(f.s)-5-w,'end']]){
+   if(a<2||a+w>W-2)continue;
+   if(!free(a-1,y-1,w+2,14))continue;
+   const t=pmSv('text',{x:al==='end'?x(f.s)-5:a,y:y+9,class:'pml','text-anchor':al});t.textContent=txt;g.append(t);return;
+  }
+ });
+ return g;
+}
+/* --- Mapas: estado --- */
+const pmDef=()=>({seq:'',circular:true,features:[]});
+function pmOpen(id){
+ const d=S.data.plasmids.get(id);if(!d)return;
+ S.pm={_id:id,name:d.code+(d.name?' · '+d.name:''),code:d.code,...pmDef(),view:'circ',enz:true,sel:-1,loading:true,dirty:false};
+ store.get('plasmidseq',id).then(x=>{
+  if(!S.pm||S.pm._id!==id)return;
+  S.pm.loading=false;
+  if(x){S.pm.seq=sqClean(x.seq||'');S.pm.circular=x.circular!==false;S.pm.features=Array.isArray(x.features)?x.features:[]}
+  _renderBody();
+ }).catch(()=>{if(S.pm)S.pm.loading=false;S.pm.err='No se ha podido cargar la secuencia.';_renderBody()});
+}
+async function pmSave(){
+ const P=S.pm;if(!P)return;
+ if(!P.seq){toast('No hay secuencia que guardar.');return}
+ if(P.seq.length>400000){toast('La secuencia es demasiado larga para guardarla.');return}
+ try{
+  await store.set('plasmidseq',P._id,{seq:P.seq,circular:!!P.circular,features:P.features||[],len:P.seq.length,updatedAt:now(),updatedBy:S.uid});
+  const d=S.data.plasmids.get(P._id);
+  if(d)await store.set('plasmids',P._id,{...clean(d),seqLen:P.seq.length,size:P.seq.length,updatedAt:now(),updatedBy:S.uid});
+  P.dirty=false;logActivity('guardó',null,null,`la secuencia de ${P.code}`);toast('Secuencia guardada');_renderBody();
+ }catch(e){toast(e&&e.code==='permission-denied'?'Falta añadir plasmidseq a las reglas de Firebase. Las tienes en Ajustes.':writeErr(e))}
+}
+async function pmReadFile(file){
+ if(!file)return;
+ try{
+  const isBin=/\.(dna|ab1)$/i.test(file.name);
+  const data=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;isBin?fr.readAsArrayBuffer(file):fr.readAsText(file)});
+  const p=pmParseAuto(file.name,data);
+  if(!p.seq)throw new Error('Sin secuencia');
+  S.pm.seq=p.seq;S.pm.circular=p.circular;S.pm.features=p.features||[];S.pm.dirty=true;S.pm.sel=-1;
+  _renderBody();toast(`${p.seq.length.toLocaleString('es-ES')} pb y ${(p.features||[]).length} elementos leídos`);
+ }catch(e){toast('No se ha podido leer: '+(e.message||'formato no reconocido'))}
+}
+function pmAuto(){
+ const P=S.pm;if(!P.seq){toast('Primero pon la secuencia.');return}
+ const add=[];
+ for(const [n,m,t] of PM_MOTIFS){
+  for(const [pat,st] of [[m,1],[revcomp(m).toUpperCase(),-1]]){
+   for(const p of pmFind(P.seq,pat,P.circular)){
+    if(P.features.some(f=>f.n===n&&Math.abs(f.s-p)<6)||add.some(f=>f.n===n&&Math.abs(f.s-p)<6))continue;
+    add.push({n,t,s:p,e:p+pat.length,st});
+   }}
+ }
+ for(const o of pmOrfs(P.seq,P.circular,300)){
+  if(P.features.concat(add).some(f=>(f.t==='cds'||f.t==='res')&&Math.abs(f.s-o.s)<12))continue;
+  add.push({n:`ORF ${o.aa} aa`,t:'cds',s:o.s,e:o.e,st:o.st});
+ }
+ if(!add.length){toast('No se ha encontrado nada nuevo.');return}
+ P.features=P.features.concat(add);P.dirty=true;_renderBody();
+ toast(`${add.length} elemento${add.length>1?'s':''} añadido${add.length>1?'s':''}`);
+}
+
+/* --- Mapas: vistas --- */
+function pmShell(){
+ const ed=S.sub&&S.sub!=='';const P=S.pm,d0=ed?S.data.plasmids.get(S.sub):null;
+ return `<div class="vhead"><div>${ed?`<a class="btn sm ghost" href="#mapas" style="margin:0 0 6px -8px">${ic('back')}Mapas</a>`:''}<h1>${ed&&d0?esc(d0.code)+(d0.name?' · '+esc(d0.name):''):'Mapas de plásmidos'}</h1><p class="lede">${ed?'La secuencia y sus elementos, con el mapa y la exportación a GenBank.':'La secuencia de cada construcción, con su mapa y sus elementos.'}</p></div>
+ <div class="vacts">${ed&&S.canWrite?`<button class="btn primary" data-a="pm-save">${ic('check')}Guardar</button>`:''}</div></div><div id="vb"></div>`;
+}
+function pmListBody(){
+ const ds=[...S.data.plasmids.values()].sort((a,b)=>natCmp(a.code,b.code));
+ if(!ds.length)return `<section class="card"><p class="mute small">Todavía no hay plásmidos en la colección.</p></section>`;
+ const con=ds.filter(d=>d.seqLen),sin=ds.filter(d=>!d.seqLen);
+ const row=d=>`<tr data-a="go" data-h="mapas/${esc(d._id)}"><td><span class="code">${esc(d.code)}</span></td><td><b>${esc(d.name||'')}</b></td><td class="mono">${d.seqLen?d.seqLen.toLocaleString('es-ES')+' pb':(d.size?fmtN(numV(d.size),0)+' pb':'')}</td><td>${d.seqLen?'<span class="tag good">Con secuencia</span>':'<span class="tag">Sin secuencia</span>'}</td></tr>`;
+ return `<section class="card"><p class="small mute">${con.length} de ${ds.length} construcciones tienen la secuencia guardada. Al abrir una puedes importar su .dna de SnapGene o su GenBank, anotarla y ver el mapa.</p></section>
+ <div class="scrollx"><table class="tbl"><thead><tr><th>Código</th><th>Nombre</th><th>Tamaño</th><th>Mapa</th></tr></thead><tbody>${con.map(row).join('')}${sin.map(row).join('')}</tbody></table></div>`;
+}
+function pmEdBody(){
+ if(!S.data.plasmids.has(S.sub))return `<section class="card"><p class="mute small">Este plásmido ya no existe.</p></section>`;
+ if(!S.pm||S.pm._id!==S.sub){pmOpen(S.sub);if(!S.pm)return ''}
+ const P=S.pm;
+ if(P.loading)return `<section class="card"><p class="mute small">Cargando la secuencia…</p></section>`;
+ const enz=P.seq&&P.enz?pmUnique(P.seq,P.circular):[];
+ const sel=P.sel>=0?pmLay(P.features,P.seq.length||1).fs[P.sel]:null;
+ const used=[...new Set((P.features||[]).map(f=>f.t))];
+ const map=P.seq?`<div id="pmhost" class="pmhost"></div>
+  <div class="pmleg">${PM_TYPES.filter(t=>used.includes(t[0])).map(([k,l])=>`<span><i class="sw" style="background:${pmCol(k)}"></i>${esc(l)}</span>`).join('')}</div>
+  <div class="pmsel">${sel?`<b style="color:${pmCol(sel.t)}">${esc(sel.n)}</b> · ${esc(PM_TL[sel.t])} · <span class="mono">${(sel.s+1).toLocaleString('es-ES')}–${sel.e.toLocaleString('es-ES')}</span> · ${sel.st===-1?'hebra −':'hebra +'} · <span class="mono">${(sel.e-sel.s).toLocaleString('es-ES')} pb</span>`:'<span class="mute">Toca un elemento del mapa para ver sus datos.</span>'}</div>`
+  :'<p class="mute small">Importa un archivo o pega la secuencia para ver el mapa.</p>';
+ return `<div class="calc"><div class="pmview">
+  <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+   <div class="seg">${[['circ','Circular'],['lin','Lineal']].map(([k,l])=>`<button data-a="pm-view" data-v="${k}" aria-pressed="${P.view===k}">${l}</button>`).join('')}</div>
+   <label class="switch"><input type="checkbox" data-pmchk="enz"${P.enz?' checked':''}> Cortadores únicos</label>
+  </div>
+  ${map}
+ </div>
+ <div class="stack">
+  <section class="card"><h2>Secuencia</h2><div class="form">
+   <div class="vacts" style="grid-column:1/-1"><label class="btn">${ic('plus')}Importar archivo<input type="file" accept=".dna,.gb,.gbk,.genbank,.ape,.fa,.fasta,.seq,.txt" id="pm-file" hidden></label>${P.seq?`<span class="small mute" style="align-self:center">${P.seq.length.toLocaleString('es-ES')} pb · ${fmtN(codGC(P.seq),1)} % GC · ${P.features.length} elementos</span>`:''}${P.dirty?'<span class="tag warn" style="align-self:center">Sin guardar</span>':''}</div>
+   <span class="help" style="grid-column:1/-1">Lee .dna de SnapGene con sus elementos, GenBank y FASTA.</span>
+   <div class="fld"><label class="lbl" for="pm-seq">O pégala aquí</label><textarea id="pm-seq" data-pmk="seq" rows="4" class="seqarea" spellcheck="false" placeholder="ATGC…">${esc(P.seq)}</textarea></div>
+   <div class="fld"><label class="switch"><input type="checkbox" data-pmchk="circular"${P.circular?' checked':''}> Es circular</label></div>
+  </div></section>
+  <section class="card"><div class="cardh" style="margin:0"><h2>Elementos</h2><span class="small mute">${P.features.length}</span></div>
+   ${P.features.length?`<div class="scrollx"><table class="ctbl"><tbody>${pmLay(P.features,P.seq.length||1).fs.map((f,i)=>`<tr${P.sel===i?' class="on"':''}><td data-a="pm-sel" data-i="${i}" style="cursor:pointer"><i class="sw" style="background:${pmCol(f.t)}"></i> ${esc(f.n)}</td><td class="n mono small">${(f.s+1).toLocaleString('es-ES')}–${f.e.toLocaleString('es-ES')} ${f.st===-1?'−':'+'}</td><td class="small mute">${esc(PM_TL[f.t])}</td><td style="width:1%"><button class="btn ghost icon sm" data-a="pm-fdel" data-i="${i}" aria-label="Quitar">${ic('x')}</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="small mute">Todavía no hay ninguno.</p>'}
+   <div class="vacts" style="margin-top:10px"><button class="btn" data-a="pm-auto">${ic('search')}Autoanotar</button><button class="btn" data-a="pm-fadd">${ic('plus')}Añadir a mano</button>${P.features.length?`<button class="btn ghost" data-a="pm-fclear">Vaciar</button>`:''}</div>
+   <p class="help">Busca promotores, terminadores, RBS, etiquetas, resistencias, orígenes y sitios conocidos, y las pautas abiertas de más de 100 aminoácidos.</p>
+  </section>
+  ${P.seq?`<section class="card"><h2>Exportar</h2><div class="vacts"><button class="btn" data-a="pm-exp" data-v="gb">${ic('down')}GenBank</button><button class="btn" data-a="pm-exp" data-v="fa">${ic('down')}FASTA</button><button class="btn" data-a="pm-copy">${ic('copy')}Copiar la secuencia</button></div><p class="help">El GenBank que genera abre en SnapGene, Benchling, Geneious y ApE.</p></section>`:''}
+ </div></div>`;
+}
+function pmBody(){return S.sub?pmEdBody():pmListBody()}
+function pmAfter(){
+ if(S.route!=='mapas'||!S.sub)return;
+ const host=$('#pmhost');if(!host||!S.pm||!S.pm.seq)return;
+ const enz=S.pm.enz?pmUnique(S.pm.seq,S.pm.circular):[];
+ host.innerHTML='';
+ host.appendChild(S.pm.view==='lin'?pmLinSVG(S.pm,{enz}):pmCircSVG(S.pm,{enz}));
+}
+function pmAddFeature(){
+ const P=S.pm;
+ openModal({title:'Añadir elemento',submit:'Añadir',fields:[
+  {k:'n',l:'Nombre',req:true,ph:'tssA'},
+  {k:'t',l:'Tipo',t:'select',half:true,opts:PM_TYPES.map(x=>x[1])},
+  {k:'st',l:'Hebra',t:'select',half:true,opts:['+','−']},
+  {k:'s',l:'Desde',t:'number',half:true,req:true,ph:'1'},
+  {k:'e',l:'Hasta',t:'number',half:true,req:true,ph:'500'}
+ ],values:{t:'CDS',st:'+'},onSave:async v=>{
+  const s=Math.max(1,Math.round(numV(v.s)||1)),e=Math.min(P.seq.length||1e9,Math.round(numV(v.e)||1));
+  if(e<=s){toast('El final tiene que ser mayor que el inicio.');throw new Error('rango')}
+  const t=(PM_TYPES.find(x=>x[1]===v.t)||['misc'])[0];
+  P.features.push({n:v.n,t,s:s-1,e,st:v.st==='−'?-1:1});P.dirty=true;_renderBody();
+ }});
+}
 
 /* ---------- views ---------- */
 const VIEWS={
@@ -3235,6 +3721,8 @@ const VIEWS={
  'mi-espacio':{shell:meShell,body:meBody,deps:['personal','strains','plasmids','oligos','reagents']},
  importar:{shell:impShell,body:impBody,deps:['members']},
  experimentos:{shell:()=>listShell('experiments'),body:()=>listBody('experiments'),deps:'*'},
+ preparaciones:{shell:()=>listShell('preps'),body:()=>listBody('preps'),deps:'*'},
+ mapas:{shell:pmShell,body:pmBody,after:pmAfter,deps:['plasmids'],needsData:false},
  secuenciacion:{shell:sqShell,body:sqBody,deps:['seqruns','plasmids','experiments'],needsData:false},
  geles:{shell:gelShell,body:gelBody,after:gelAfter,deps:['gels','strains','plasmids','experiments'],needsData:false},
  calculadoras:{shell:calcShell,body:calcBody,deps:['oligos','reagents','meta','plasmids'],needsData:false},
@@ -3312,13 +3800,27 @@ document.addEventListener('click',async e=>{
   /* calculators */
   /* geles */
   case 'gel-forexp':{S.gelPreExp=el.dataset.id;closeDrawer();location.hash='geles';setTimeout(()=>{const i=$('#gel-file-new');i&&i.click()},120);break}
+  /* mapas */
+  case 'pm-view':{S.pm.view=el.dataset.v;_renderBody();break}
+  case 'pm-save':pmSave();break;
+  case 'pm-auto':pmAuto();break;
+  case 'pm-fadd':pmAddFeature();break;
+  case 'pm-fdel':{const i=+el.dataset.i;const f=pmLay(S.pm.features,S.pm.seq.length||1).fs[i];const j=S.pm.features.findIndex(x=>x.n===f.n&&x.s===f.s&&x.e===f.e);if(j>=0)S.pm.features.splice(j,1);S.pm.sel=-1;S.pm.dirty=true;_renderBody();break}
+  case 'pm-fclear':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez';break}S.pm.features=[];S.pm.sel=-1;S.pm.dirty=true;_renderBody();break;
+  case 'pm-sel':{S.pm.sel=+el.dataset.i;_renderBody();break}
+  case 'pm-copy':copyText(S.pm.seq,'Secuencia copiada');break;
+  case 'pm-exp':{const P=S.pm;const gb=el.dataset.v==='gb';const txt=gb?pmToGB(P):pmToFasta(P);
+   const b=new Blob([txt],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);
+   a.download=String(P.code||'construccion').replace(/[^\w\-]+/g,'_')+(gb?'.gb':'.fasta');
+   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast(gb?'GenBank descargado':'FASTA descargado');break}
+  case 'sq-usemap':{const id=S.sq.plasmid;store.get('plasmidseq',id).then(x=>{if(!x||!x.seq){toast('Esa construcción no tiene secuencia guardada.');return}S.sq.expSeq=sqClean(x.seq);S.sq.circular=x.circular!==false;S.sq.res=null;_renderBody();toast(`${x.seq.length.toLocaleString('es-ES')} pb cargadas del mapa`)}).catch(()=>toast('No se ha podido cargar la secuencia.'));break}
   case 'sq-mode':{S.sq.mode=el.dataset.v;_renderBody();break}
   case 'sq-save':sqSave();break;
   case 'sq-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}sqDelete();break;
   case 'sq-mark':sqMarkPlasmid(el.dataset.v);break;
   case 'go':location.hash=el.dataset.h;break;
   case 'gel-click':gelClick(e);break;
-  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'experiments', 'gels', 'gelimgs',\n 'chroms', 'seqruns', 'preps']",'Lista copiada');break;
+  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'experiments', 'gels', 'gelimgs',\n 'chroms', 'seqruns', 'preps', 'plasmidseq']",'Lista copiada');break;
   case 'gel-save':gelSave();break;
   case 'gel-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}gelDelete();break;
   case 'gel-export':gelExport(+el.dataset.v||1);break;
@@ -3344,6 +3846,8 @@ document.addEventListener('click',async e=>{
   case 'pp-store':ppStore();break;
   case 'a280-src':{const P=a280State();P.src=el.dataset.v;if(P.src==='abs'||P.src==='manual'){P.eps='';}a280Save();_renderBody();break}
   case 'a280-store':a280Store();break;
+  case 'a280-prep':{const P=a280State(),r=a280Calc();if(r.err){toast(r.err);break}
+   openItemForm('preps',null,{name:(P.name||'').trim(),conc:r.mgml!=null?+r.mgml.toFixed(3):'',vol:numV(P.vol)>0?Math.round(numV(P.vol)*1000):'',date:new Date().toISOString().slice(0,10)});break}
   case 'a280-unstore':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}a280Unstore();break;
   case 'buf-add':{const B=bufState();B.rows.push({name:'',mode:'stock',fc:'',fu:'mM',sc:'',su:'M',mw:null});bufSave();_renderBody();setTimeout(()=>{const x=$$('[data-buf="name"]').pop();x&&x.focus()},30);break}
   case 'buf-del':{const B=bufState();B.rows.splice(+el.dataset.i,1);bufSave();_renderBody();break}
@@ -3371,6 +3875,8 @@ document.addEventListener('input',e=>{
  if(t.id==='f-seq'){$('#seqstats').innerHTML=seqStatsHTML(t.value);return}
  if(t.classList.contains('cl-filter')){const q=norm(t.value);$$('label',t.nextElementSibling).forEach(l=>l.hidden=!!q&&!l.dataset.q.includes(q));return}
  if(t.id==='imp-paste'){impState().raw=t.value;return}
+  if(t.id==='pm-file'){const f=t.files&&t.files[0];if(f)pmReadFile(f);return}
+  if(t.dataset.pmk){S.pm[t.dataset.pmk]=t.dataset.pmk==='seq'?sqClean(t.value):t.value;S.pm.dirty=true;clearTimeout(S.pmT);S.pmT=setTimeout(()=>{const a=document.activeElement,pos=a&&a.selectionStart;_renderBody();const x=$('#pm-seq');if(x&&a&&a.id==='pm-seq'){x.focus();try{x.setSelectionRange(pos,pos)}catch(_){}}},700);return}
   if(t.id==='sq-file-obs'||t.id==='sq-file-exp'){const f=t.files&&t.files[0];if(f)sqReadFile(f,t.id==='sq-file-obs'?'obs':'expSeq');return}
   if(t.dataset.sqk){S.sq[t.dataset.sqk]=t.value;clearTimeout(S.sqT);S.sqT=setTimeout(()=>{const a=document.activeElement,id=a&&a.dataset&&a.dataset.sqk,pos=a&&a.selectionStart;_renderBody();if(id){const x=document.querySelector(`[data-sqk="${id}"]`);if(x){x.focus();try{x.setSelectionRange(pos,pos)}catch(_){}}}},600);return}
   if(t.id==='gel-file'||t.id==='gel-file-new'){const f=t.files&&t.files[0];if(!f)return;if(t.id==='gel-file-new'){S.gel={_new:true,...gelDef(),exp:S.gelPreExp||'',img:null,w:0,h:0};S.gelPreExp='';S.gelImgDirty=true;location.hash='geles/nuevo';setTimeout(()=>gelPickFile(f),60)}else{S.gelImgDirty=true;gelPickFile(f)}return}
@@ -3409,6 +3915,7 @@ document.addEventListener('change',async e=>{
  if(t.id==='imp-mkbox'){impState().mkBoxes=t.checked;return}
  if(t.id==='imp-owner'){impState().owner=t.value;return}
  if(t.dataset.buf==='name'){const r=bufState().rows[+t.dataset.i];const L=BLIBM.get(norm(t.value));if(r&&L){r.name=L.name;if(L.mw!=null)r.mw=L.mw;if(L.st!=null){r.sc=L.st;r.su=L.su;r.mode='stock'}else r.mode='solid';if(L.fu&&!(numV(r.fc)>0))r.fu=L.fu;bufSave();_renderBody()}return}
+  if(t.dataset.pmchk){S.pm[t.dataset.pmchk]=t.checked;if(t.dataset.pmchk==='circular')S.pm.dirty=true;_renderBody();return}
   if(t.dataset.sqsel){S.sq[t.dataset.sqsel]=t.value;_renderBody();return}
   if(t.dataset.sqchk){S.sq[t.dataset.sqchk]=t.checked;_renderBody();return}
   if(t.dataset.gelchk){S.gel.adj[t.dataset.gelchk]=t.checked;gelPaint();return}
