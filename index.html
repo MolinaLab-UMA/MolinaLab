@@ -473,6 +473,17 @@ main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
 .sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
 .pmsel{margin-top:10px;padding:9px 11px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);font-size:.84rem;color:var(--fg-2);min-height:38px}
 .ctbl tr.on td{background:var(--accent-soft)}
+.gelwrap{width:100%;overflow:auto;position:relative;background:var(--surface-2);border-radius:var(--r-sm)}
+.gelcanvas.cropping #gelcv{cursor:crosshair;touch-action:none}
+.gelsel{position:absolute;border:2px dashed var(--accent);background:rgba(36,67,196,.14);pointer-events:none;border-radius:2px}
+.ladchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.ladchip{font:600 .72rem/1 var(--f-mono);padding:4px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg-3)}
+.ladchip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.ladchip.nx{outline:2px solid var(--accent);outline-offset:1px;color:var(--fg)}
+.gelzoom{display:flex;align-items:center;gap:8px;margin:8px 0 2px}
+.gelzoom input[type=range]{flex:1;min-width:60px}
+details.sub{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;background:var(--surface-2)}
+details.sub>summary{cursor:pointer;font-size:.85rem;color:var(--fg-2);font-weight:600}
 .gel{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:980px){.gel{grid-template-columns:minmax(0,1fr)}}
 @media (min-width:981px){.gelview{position:sticky;top:76px}}
@@ -575,6 +586,7 @@ const IC={
  pcr:'<path d="M4 18c3 0 3-12 6-12s3 12 6 12 2-6 4-6"/><path d="M3 21h18"/>',
  prep:'<path d="M4 3h5v13.5a2.5 2.5 0 0 1-5 0z"/><path d="M15 3h5v13.5a2.5 2.5 0 0 1-5 0z"/><path d="M4 11h5M15 9h5"/>',
  exp:'<path d="M9 3h6M10 3v6.5L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 14h9"/>',
+ crop:'<path d="M6.5 2.5v15h15"/><path d="M2.5 6.5h15v15"/>',
  map:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2M20.5 12h-2M12 20.5v-2M3.5 12h2"/><path d="M15.5 6.2a7 7 0 0 1 2.3 3.1" stroke-width="3"/><path d="M7 16.5a7 7 0 0 0 4.6 2.9" stroke-width="3"/>',
  seq:'<path d="M5 3c0 6 14 12 14 18M19 3c0 6-14 12-14 18"/><path d="M7.5 6.5h9M6 10h12M6 14h12M7.5 17.5h9" stroke-width="1.6"/>',
  gel:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M12 3v18M16 3v18"/><path d="M5.5 8h3M9.5 11h3M13.5 8h3M5.5 14h3M13.5 15h3" stroke-width="2.2"/>'
@@ -2783,11 +2795,63 @@ const LAZY={};
 function lazySub(c){if(LAZY[c])return;LAZY[c]=1;store.sub(c,m=>{S.data[c]=m;S.got.add(c);dirty(c)})}
 const GEL_KIND=[['agarosa','Agarosa (ADN)'],['page','Poliacrilamida (proteína)']];
 const GEL_UNIT={agarosa:'pb',page:'kDa'};
+const GEL_LADDERS={
+ agarosa:[
+  {n:'GeneRuler 1 kb',s:'Thermo SM0311',v:[10000,8000,6000,5000,4000,3500,3000,2500,2000,1500,1000,750,500,250]},
+  {n:'GeneRuler 1 kb Plus',s:'Thermo SM1331',v:[20000,10000,7000,5000,4000,3000,2000,1500,1000,700,500,400,300,200,75]},
+  {n:'GeneRuler 100 bp Plus',s:'Thermo SM0321',v:[3000,2000,1500,1200,1000,900,800,700,600,500,400,300,200,100]},
+  {n:'GeneRuler 100 bp',s:'Thermo SM0241',v:[1000,900,800,700,600,500,400,300,200,100]},
+  {n:'GeneRuler 50 bp',s:'Thermo SM0371',v:[1000,900,800,700,600,500,400,300,250,200,150,100,50]}
+ ],
+ page:[
+  {n:'PageRuler preteñido',s:'Thermo 26616',v:[180,130,100,70,55,40,35,25,15,10]},
+  {n:'PageRuler Plus preteñido',s:'Thermo 26619',v:[250,130,100,70,55,35,25,15,10]},
+  {n:'Spectra Multicolor amplio rango',s:'Thermo 26634',v:[260,140,100,70,50,40,35,25,15,10]}
+ ]
+};
+function gelLadderOf(G){
+ if(G.mk.ladder==='otra')return String(G.mk.custom||'').split(/[,;\s]+/).map(x=>numV(x)).filter(x=>x>0).sort((a,b)=>b-a);
+ const L=(GEL_LADDERS[G.kind]||[]).find(x=>x.n===G.mk.ladder);
+ return L?L.v.slice():[];
+}
+function gelFit(items){
+ const pts=(items||[]).filter(it=>numV(it.v)>0).map(it=>({y:it.y,l:Math.log10(numV(it.v))}));
+ if(pts.length<2)return null;
+ const n=pts.length,sy=pts.reduce((a,p)=>a+p.y,0),sl=pts.reduce((a,p)=>a+p.l,0);
+ const syy=pts.reduce((a,p)=>a+p.y*p.y,0),syl=pts.reduce((a,p)=>a+p.y*p.l,0);
+ const d=n*syy-sy*sy;if(Math.abs(d)<1e-12)return null;
+ const b=(n*syl-sy*sl)/d,a=(sl-b*sy)/n,mean=sl/n;
+ const sst=pts.reduce((s,p)=>s+Math.pow(p.l-mean,2),0);
+ const sse=pts.reduce((s,p)=>s+Math.pow(p.l-(a+b*p.y),2),0);
+ return {a,b,n,r2:sst>1e-12?1-sse/sst:1,size:y=>Math.pow(10,a+b*y),yOf:v=>(Math.log10(v)-a)/b};
+}
+function gelNextLadderVal(G){
+ const L=gelLadderOf(G);if(!L.length)return '';
+ const used=new Set(G.mk.items.map(it=>numV(it.v)));
+ for(const v of L)if(!used.has(v))return String(v);
+ return '';
+}
+function gelFillLadder(){
+ const G=S.gel,L=gelLadderOf(G);
+ if(!L.length){toast('Elige antes una escalera.');return}
+ const f=gelFit(G.mk.items);
+ if(!f){toast('Coloca al menos dos bandas para poder calcular el resto.');return}
+ let add=0;
+ for(const v of L){
+  if(G.mk.items.some(it=>numV(it.v)===v))continue;
+  const y=f.yOf(v);
+  if(!isFinite(y)||y<-0.005||y>1.005)continue;
+  G.mk.items.push({y:Math.min(1,Math.max(0,y)),v:String(v),est:1});add++;
+ }
+ G.mk.items.sort((a,b)=>a.y-b.y);_renderBody();
+ toast(add?`${add} banda${add>1?'s':''} colocada${add>1?'s':''} · R² ${fmtN(f.r2,4)}`:'Ya estaban todas.');
+}
+
 const gelDef=()=>({title:'',kind:'agarosa',exp:'',date:new Date().toISOString().slice(0,10),notes:'',strains:[],plasmids:[],
  adj:{rot:0,cl:0,cr:0,ct:0,cb:0,bright:100,contrast:100,invert:false,gray:true},
  lanes:{n:8,x0:0.08,x1:0.92,angle:0,show:true,labels:[]},
- mk:{unit:'pb',show:true,items:[]},
- style:{bg:'white',fs:100,panel:'',title:true}});
+ mk:{unit:'pb',show:true,items:[],ladder:'',custom:''},
+ style:{bg:'white',fs:100,panel:'',title:true,fsLane:100,fsMk:100,fsTitle:100,weight:400,font:'sans',lanePos:'top',titlePos:'bottom',titleAlign:'left',autoFit:true}});
 function gelState(){if(S.gel)return S.gel;S.gel=null;return null}
 function gelOpen(id){
  if(id==='nuevo'){S.gel={_new:true,...gelDef(),img:null,w:0,h:0};S.gelImg=null;return}
@@ -2836,24 +2900,57 @@ function gelBase(G){
  if(GIMG){x.save();x.translate(G.w/2,G.h/2);x.rotate((G.adj.rot||0)*Math.PI/180);x.drawImage(GIMG,-G.w/2,-G.h/2,G.w,G.h);x.restore()}
  return c;
 }
+const GEL_FONT={sans:'"Helvetica Neue",Helvetica,Arial,sans-serif',serif:'Georgia,"Times New Roman",Times,serif',mono:'"IBM Plex Mono",Menlo,Consolas,monospace'};
+function gelWrap(x,txt,maxW){
+ const words=String(txt).split(/\s+/).filter(Boolean),out=[];let cur='';
+ for(const w of words){const t=cur?cur+' '+w:w;if(x.measureText(t).width>maxW&&cur){out.push(cur);cur=w}else cur=t}
+ if(cur)out.push(cur);return out.length?out:[''];
+}
 function gelRender(G,scale){
- const cr=gelCrop(G),st=G.style,dark=st.bg==='black';
+ const cr=gelCrop(G),st={...gelDef().style,...G.style},dark=st.bg==='black';
  const iw=Math.round(cr.w*scale),ih=Math.round(cr.h*scale);
- const fs=Math.max(8,Math.round(ih/24*(st.fs||100)/100));
- const pad=Math.round(fs*0.7);
- const mkOn=G.mk.show&&G.mk.items.length;
- const laOn=G.lanes.show&&G.lanes.n>0;
- const ang=(G.lanes.angle||0)*Math.PI/180;
- const mL=pad+(mkOn?Math.round(fs*3.4):0);
- let mT=pad;
- if(laOn)mT+=ang?Math.round(fs*4.2):Math.round(fs*1.9);
- if(st.panel)mT=Math.max(mT,pad+Math.round(fs*2.2));
- const mR=pad,mB=pad+(st.title&&G.title?Math.round(fs*2):0);
- const c=document.createElement('canvas');c.width=mL+iw+mR;c.height=mT+ih+mB;
- const x=c.getContext('2d');
+ const bs=Math.max(7,Math.min(iw,ih)/26*(st.fs||100)/100);
+ const FAM=GEL_FONT[st.font]||GEL_FONT.sans,WG=st.weight||400;
+ const c=document.createElement('canvas'),x=c.getContext('2d');
+ const fnt=(px,w)=>`${w||WG} ${Math.max(6,Math.round(px))}px ${FAM}`;
+ const meas=(t,px,w)=>{x.font=fnt(px,w);return x.measureText(String(t)).width};
+ let fsL=bs*(st.fsLane||100)/100,fsM=bs*(st.fsMk||100)/100,fsT=bs*(st.fsTitle||100)/100;
+ const fsP=bs*1.7;
+ const laOn=!!(G.lanes.show&&G.lanes.n>0),mkOn=!!(G.mk.show&&G.mk.items.length);
+ const labs=laOn?Array.from({length:G.lanes.n},(_,i)=>(G.lanes.labels[i]||'').trim()||String(i+1)):[];
+ let ang=(G.lanes.angle||0)*Math.PI/180,wmax=0;
+ if(laOn){
+  wmax=Math.max(...labs.map(t=>meas(t,fsL)));
+  const n=G.lanes.n,pitch=n>1?Math.abs(G.lanes.x1-G.lanes.x0)*iw/(n-1):iw;
+  if(st.autoFit&&!ang&&wmax>pitch*0.94){
+   const k=pitch*0.94/wmax;
+   if(k>=0.6){fsL=Math.max(6,fsL*k);wmax=Math.max(...labs.map(t=>meas(t,fsL)))}
+   else{ang=Math.PI/4}
+  }
+ }
+ const pad=Math.round(bs*0.8),tick=Math.round(fsM*0.6);
+ const mkW=mkOn?Math.ceil(Math.max(meas(G.mk.unit||'',fsM*0.85),...G.mk.items.map(it=>meas(it.v||'',fsM))))+tick+Math.round(fsM*0.5):0;
+ let ovL=0,ovR=0;
+ if(laOn){
+  if(ang)ovR=Math.max(0,G.lanes.x1*iw+wmax*Math.cos(ang)-iw);
+  else{ovL=Math.max(0,wmax/2-G.lanes.x0*iw);ovR=Math.max(0,G.lanes.x1*iw+wmax/2-iw)}
+ }
+ const mL=pad+Math.max(mkW,Math.ceil(ovL)),mR=pad+Math.ceil(ovR);
+ const laneH=laOn?Math.round(ang?wmax*Math.sin(ang)+fsL*0.9:fsL*1.35):0;
+ const panelH=st.panel?Math.round(fsP*1.35):0;
+ x.font=fnt(fsT);
+ const tLines=(st.title&&G.title)?gelWrap(x,G.title,Math.max(80,iw)):[];
+ const titleH=tLines.length?Math.round(tLines.length*fsT*1.28+fsT*0.45):0;
+ const topLane=(laOn&&st.lanePos!=='bottom')?laneH:0;
+ const botLane=(laOn&&st.lanePos==='bottom')?laneH:0;
+ const topTitle=(titleH&&st.titlePos==='top')?titleH:0;
+ const botTitle=(titleH&&st.titlePos!=='top')?titleH:0;
+ const unitH=(mkOn&&G.mk.unit)?Math.round(fsM*1.15):0;
+ const topBand=Math.max(topLane,unitH);
+ const mT=pad+panelH+topTitle+topBand,mB=pad+botLane+botTitle;
+ c.width=mL+iw+mR;c.height=mT+ih+mB;
  x.fillStyle=dark?'#000':'#fff';x.fillRect(0,0,c.width,c.height);
- const base=gelBase(G);
- const f=[];const a=G.adj;
+ const base=gelBase(G),f=[],a=G.adj;
  if(a.gray)f.push('grayscale(1)');
  if(a.bright!==100)f.push(`brightness(${a.bright}%)`);
  if(a.contrast!==100)f.push(`contrast(${a.contrast}%)`);
@@ -2863,46 +2960,112 @@ function gelRender(G,scale){
  x.drawImage(base,cr.x,cr.y,cr.w,cr.h,mL,mT,iw,ih);
  x.restore();
  const ink=dark?'#fff':'#000';
- x.fillStyle=ink;x.strokeStyle=ink;
- const FF=`${fs}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
- x.font=FF;x.textBaseline='alphabetic';
+ x.fillStyle=ink;x.strokeStyle=ink;x.textBaseline='alphabetic';
  if(laOn){
-  const n=G.lanes.n;
+  x.font=fnt(fsL);
+  const n=G.lanes.n,top=st.lanePos!=='bottom';
   for(let i=0;i<n;i++){
    const t=n>1?i/(n-1):0.5;
    const px=mL+(G.lanes.x0+(G.lanes.x1-G.lanes.x0)*t)*iw;
-   const lab=(G.lanes.labels[i]||'').trim()||String(i+1);
-   x.save();x.translate(px,mT-Math.round(fs*0.55));
-   if(ang){x.rotate(-ang);x.textAlign='left';x.fillText(lab,0,0)}
-   else{x.textAlign='center';x.fillText(lab,0,0)}
-   x.restore();
+   x.save();
+   if(top){
+    x.translate(px,mT-Math.round(fsL*0.38)-Math.max(0,Math.round((topBand-laneH)/2)));
+    if(ang){x.rotate(-ang);x.textAlign='left'}else x.textAlign='center';
+   }else{
+    x.translate(px,mT+ih+Math.round(ang?fsL*0.5:fsL*1.05));
+    if(ang){x.rotate(ang);x.textAlign='right'}else x.textAlign='center';
+   }
+   x.fillText(labs[i],0,0);x.restore();
   }
  }
  if(mkOn){
-  x.textAlign='right';x.lineWidth=Math.max(1,Math.round(fs*0.08));
+  x.font=fnt(fsM);x.textAlign='right';x.lineWidth=Math.max(1,Math.round(fsM*0.09));
   for(const it of G.mk.items){
    const py=mT+it.y*ih;
-   x.beginPath();x.moveTo(mL-Math.round(fs*0.5),py);x.lineTo(mL-Math.round(fs*0.1),py);x.stroke();
-   x.fillText(String(it.v||''),mL-Math.round(fs*0.7),py+Math.round(fs*0.35));
+   x.beginPath();x.moveTo(mL-tick,py);x.lineTo(mL-Math.round(tick*0.2),py);x.stroke();
+   x.fillText(String(it.v||''),mL-tick-Math.round(fsM*0.3),py+Math.round(fsM*0.34));
   }
-  x.save();x.translate(mL-Math.round(fs*0.7),mT-Math.round(fs*0.45));x.textAlign='right';
-  x.font=`${Math.round(fs*0.85)}px "Helvetica Neue",Helvetica,Arial,sans-serif`;
-  x.fillText(G.mk.unit||'',0,0);x.restore();
+  if(G.mk.unit){x.font=fnt(fsM*0.85);x.textAlign='right';x.fillText(G.mk.unit,mL-tick-Math.round(fsM*0.3),mT-Math.round(fsM*0.35))}
  }
- if(st.panel){x.font=`700 ${Math.round(fs*1.5)}px "Helvetica Neue",Helvetica,Arial,sans-serif`;x.textAlign='left';x.fillText(st.panel,pad,pad+Math.round(fs*1.3))}
- if(st.title&&G.title){x.font=FF;x.textAlign='left';x.fillText(G.title,mL,mT+ih+Math.round(fs*1.4))}
- return {canvas:c,mL,mT,iw,ih,fs};
+ if(st.panel){x.font=fnt(fsP,700);x.textAlign='left';x.fillText(st.panel,pad,pad+Math.round(fsP*1.05))}
+ if(tLines.length){
+  x.font=fnt(fsT);
+  const al=st.titleAlign||'left';
+  x.textAlign=al==='center'?'center':'left';
+  const tx=al==='center'?mL+iw/2:mL;
+  let ty=(st.titlePos==='top'?pad+panelH:mT+ih+botLane)+Math.round(fsT*1.05);
+  for(const ln of tLines){x.fillText(ln,tx,ty);ty+=Math.round(fsT*1.28)}
+ }
+ return {canvas:c,mL,mT,iw,ih,fs:bs};
+}
+function gelAutoCrop(){
+ const G=S.gel;if(!G||!GIMG){toast('Falta la foto.');return}
+ const N=260,s=Math.min(1,N/Math.max(G.w,G.h));
+ const w=Math.max(10,Math.round(G.w*s)),h=Math.max(10,Math.round(G.h*s));
+ const c=document.createElement('canvas');c.width=w;c.height=h;
+ const x=c.getContext('2d');x.drawImage(gelBase(G),0,0,w,h);
+ let d;try{d=x.getImageData(0,0,w,h).data}catch(_){toast('No se ha podido analizar la imagen.');return}
+ const g=(i,j)=>{const k=(j*w+i)*4;return (d[k]*299+d[k+1]*587+d[k+2]*114)/1000};
+ const colR=[],rowR=[];
+ for(let i=0;i<w;i++){let mn=255,mx=0;for(let j=0;j<h;j++){const v=g(i,j);if(v<mn)mn=v;if(v>mx)mx=v}colR.push(mx-mn)}
+ for(let j=0;j<h;j++){let mn=255,mx=0;for(let i=0;i<w;i++){const v=g(i,j);if(v<mn)mn=v;if(v>mx)mx=v}rowR.push(mx-mn)}
+ const thr=arr=>Math.max(7,Math.max.apply(null,arr)*0.2);
+ const tc=thr(colR),tr=thr(rowR);
+ let l=0;while(l<w-10&&colR[l]<tc)l++;
+ let r=w-1;while(r>l+10&&colR[r]<tc)r--;
+ let t=0;while(t<h-10&&rowR[t]<tr)t++;
+ let b=h-1;while(b>t+10&&rowR[b]<tr)b--;
+ const m=0.008;
+ const nl=Math.min(0.45,Math.max(0,l/w-m)),nr=Math.min(0.45,Math.max(0,1-(r+1)/w-m));
+ const nt=Math.min(0.45,Math.max(0,t/h-m)),nb=Math.min(0.45,Math.max(0,1-(b+1)/h-m));
+ if(nl+nr+nt+nb<0.005){toast('No hay bordes vacíos que quitar.');return}
+ G.adj.cl=nl;G.adj.cr=nr;G.adj.ct=nt;G.adj.cb=nb;_renderBody();
+ toast('Recortado a lo que tiene contenido');
+}
+function gelCropDrag(ev){
+ const G=S.gel;if(!G||!S.gelCrop||!GEOM)return;
+ const cv=$('#gelcv');if(!cv)return;
+ const b=cv.getBoundingClientRect(),sx=cv.width/b.width;
+ const pt=e=>({x:((e.clientX-b.left)*sx-GEOM.mL)/GEOM.iw,y:((e.clientY-b.top)*sx-GEOM.mT)/GEOM.ih});
+ const p0=pt(ev);ev.preventDefault();
+ const box=document.createElement('div');box.className='gelsel';
+ cv.parentElement.appendChild(box);
+ const place=p1=>{
+  const l=Math.min(p0.x,p1.x),t=Math.min(p0.y,p1.y),w=Math.abs(p1.x-p0.x),h=Math.abs(p1.y-p0.y);
+  box.style.left=((GEOM.mL+l*GEOM.iw)/cv.width*100)+'%';
+  box.style.top=((GEOM.mT+t*GEOM.ih)/cv.height*100)+'%';
+  box.style.width=(w*GEOM.iw/cv.width*100)+'%';
+  box.style.height=(h*GEOM.ih/cv.height*100)+'%';
+  return {l,t,w,h};
+ };
+ let last=place(p0);
+ const mv=e=>{last=place(pt(e))};
+ const up=()=>{
+  document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);
+  box.remove();
+  if(last.w<0.04||last.h<0.04){toast('Arrastra un recuadro algo mayor.');return}
+  const a=G.adj,kw=1-a.cl-a.cr,kh=1-a.ct-a.cb;
+  const nl=a.cl+Math.max(0,last.l)*kw,nr=1-(a.cl+Math.min(1,last.l+last.w)*kw);
+  const nt=a.ct+Math.max(0,last.t)*kh,nb=1-(a.ct+Math.min(1,last.t+last.h)*kh);
+  a.cl=Math.min(0.48,Math.max(0,nl));a.cr=Math.min(0.48,Math.max(0,nr));
+  a.ct=Math.min(0.48,Math.max(0,nt));a.cb=Math.min(0.48,Math.max(0,nb));
+  S.gelCrop=false;_renderBody();toast('Recortado');
+ };
+ document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
 function gelPaint(){
  const host=$('#gelc');if(!host||!S.gel)return;
  const G=S.gel;
  if(!G.img){host.innerHTML='<p class="mute small">Elige una foto del gel para empezar.</p>';return}
  const maxW=Math.max(240,Math.min(host.clientWidth||600,900));
- const cr=gelCrop(G);const sc=Math.min(1,maxW/ (cr.w*1.25));
- const r=gelRender(G,sc||0.5);
- r.canvas.id='gelcv';r.canvas.style.width='100%';r.canvas.style.height='auto';
+ const cr=gelCrop(G),sc=Math.min(1.5,maxW/(cr.w*1.2))||0.5;
+ const r=gelRender(G,sc);
+ const wrap=document.createElement('div');wrap.className='gelwrap';
+ r.canvas.id='gelcv';r.canvas.style.width=Math.round(100*(S.gelZoom||1))+'%';r.canvas.style.height='auto';
  r.canvas.setAttribute('role','img');r.canvas.setAttribute('aria-label','Vista del gel anotado');
- host.innerHTML='';host.appendChild(r.canvas);
+ wrap.appendChild(r.canvas);
+ host.innerHTML='';host.appendChild(wrap);
+ host.classList.toggle('cropping',!!S.gelCrop);
  GEOM=r;
 }
 let GEOM=null;
@@ -2914,7 +3077,13 @@ function gelClick(ev){
  const px=(ev.clientX-b.left)*sx,py=(ev.clientY-b.top)*sx;
  const y=(py-GEOM.mT)/GEOM.ih;
  if(y<-0.02||y>1.02)return;
- G.mk.items.push({y:Math.min(1,Math.max(0,y)),v:''});
+ if(S.gelMeasure){
+  const f=gelFit(G.mk.items);
+  if(!f){toast('Primero coloca al menos dos bandas del marcador.');return}
+  S.gelMeas={y:Math.min(1,Math.max(0,y)),v:f.size(Math.min(1,Math.max(0,y))),r2:f.r2,n:f.n};
+  _renderBody();return;
+ }
+ G.mk.items.push({y:Math.min(1,Math.max(0,y)),v:gelNextLadderVal(G)});
  G.mk.items.sort((a,b)=>a.y-b.y);
  G.mk.show=true;_renderBody();
  setTimeout(()=>{const list=$$('[data-gelmk="v"]');const i=G.mk.items.findIndex(z=>!z.v);const el=list[i<0?list.length-1:i];el&&el.focus()},30);
@@ -2979,7 +3148,8 @@ function gelEdBody(){
  const unit=G.mk.unit||GEL_UNIT[G.kind];
  return `<div class="gel">
  <div class="gelview"><div id="gelc" class="gelcanvas"${G.img?' data-a="gel-click"':''}></div>
-  ${G.img?`<p class="help">Pulsa en la imagen, a la altura de una banda del marcador, para añadir su etiqueta.</p>`:`<label class="btn primary" style="align-self:flex-start">${ic('plus')}Elegir foto<input type="file" accept="image/*" id="gel-file" hidden></label>`}
+  ${G.img?`<div class="gelzoom"><button class="btn sm ghost icon" data-a="gel-zoom" data-v="-" aria-label="Alejar">−</button><input type="range" min="50" max="400" step="10" value="${Math.round((S.gelZoom||1)*100)}" data-gelzoom aria-label="Zoom"><button class="btn sm ghost icon" data-a="gel-zoom" data-v="+" aria-label="Acercar">+</button><span class="mono small mute">${Math.round((S.gelZoom||1)*100)} %</span></div>
+  <p class="help">${S.gelCrop?'Arrastra un recuadro sobre la foto para recortarla.':(S.gelMeasure?'Pulsa a la altura de una banda para estimar su tamaño.':'Pulsa en la imagen, a la altura de una banda del marcador, para añadir su etiqueta.')}</p>`:`<label class="btn primary" style="align-self:flex-start">${ic('plus')}Elegir foto<input type="file" accept="image/*" id="gel-file" hidden></label>`}
   ${S.gelErr?`<p class="hint bad">${esc(S.gelErr)}</p>`:''}
  </div>
  <div class="stack">
@@ -2991,11 +3161,18 @@ function gelEdBody(){
    <div class="fld"><label class="lbl" for="gel-notes">Notas</label><textarea id="gel-notes" data-gelk="notes" rows="2" placeholder="Condiciones, tampón, tiempo…">${esc(G.notes||'')}</textarea></div>
   </div></section>
   <section class="card"><details open><summary>Imagen</summary><div class="form" style="margin-top:10px">
+   <div class="fld"><span class="lbl">Recorte</span><div class="vacts">
+    <button class="btn sm${S.gelCrop?' primary':''}" data-a="gel-cropmode">${ic('crop')}${S.gelCrop?'Arrastra sobre la foto':'Recortar a mano'}</button>
+    <button class="btn sm" data-a="gel-autocrop">Quitar bordes vacíos</button>
+    ${(G.adj.cl||G.adj.cr||G.adj.ct||G.adj.cb)?`<button class="btn sm ghost" data-a="gel-uncrop">Quitar el recorte</button>`:''}
+   </div><span class="help">Dibuja un recuadro encima de la foto y se queda con esa zona. Los deslizadores de abajo lo afinan.</span></div>
    ${sl('rot','Enderezar',-15,15,0.1,G.adj.rot,v=>v+' °')}
-   ${sl('ct','Recortar por arriba',0,45,0.5,Math.round(G.adj.ct*1000)/10,v=>v+' %')}
-   ${sl('cb','Recortar por abajo',0,45,0.5,Math.round(G.adj.cb*1000)/10,v=>v+' %')}
-   ${sl('cl','Recortar por la izquierda',0,45,0.5,Math.round(G.adj.cl*1000)/10,v=>v+' %')}
-   ${sl('cr','Recortar por la derecha',0,45,0.5,Math.round(G.adj.cr*1000)/10,v=>v+' %')}
+   <details class="sub"><summary>Recorte fino</summary><div class="form" style="margin-top:8px">
+   ${sl('ct','Por arriba',0,45,0.5,Math.round(G.adj.ct*1000)/10,v=>v+' %')}
+   ${sl('cb','Por abajo',0,45,0.5,Math.round(G.adj.cb*1000)/10,v=>v+' %')}
+   ${sl('cl','Por la izquierda',0,45,0.5,Math.round(G.adj.cl*1000)/10,v=>v+' %')}
+   ${sl('cr','Por la derecha',0,45,0.5,Math.round(G.adj.cr*1000)/10,v=>v+' %')}
+   </div></details>
    ${sl('bright','Brillo',40,180,1,G.adj.bright,v=>v+' %')}
    ${sl('contrast','Contraste',40,250,1,G.adj.contrast,v=>v+' %')}
    <div class="fld"><label class="switch"><input type="checkbox" data-gelchk="gray"${G.adj.gray?' checked':''}> Blanco y negro</label></div>
@@ -3014,13 +3191,36 @@ function gelEdBody(){
   <section class="card"><details open><summary>Marcador</summary><div class="form" style="margin-top:10px">
    <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="mk.show"${G.mk.show?' checked':''}> Poner el marcador</label></div>
    <div class="fld half"><label class="lbl" for="g-unit">Unidad</label><input id="g-unit" data-gelk2="mk.unit" class="mono" value="${esc(unit)}" placeholder="${esc(GEL_UNIT[G.kind])}"></div>
-   ${G.mk.items.length?`<div class="mkrows">${G.mk.items.map((it,i)=>`<div class="mkrow"><input data-gelmk="v" data-i="${i}" value="${esc(it.v||'')}" placeholder="${G.kind==='page'?'70':'1000'}" aria-label="Valor de la banda ${i+1}"><span class="mono small mute">${Math.round(it.y*1000)/10} %</span><button type="button" class="btn ghost icon sm" data-a="gel-mkdel" data-i="${i}" aria-label="Quitar">${ic('x')}</button></div>`).join('')}</div>`:'<p class="small mute">Pulsa en la imagen, a la altura de cada banda del marcador, para irlas añadiendo.</p>'}
+   <div class="fld half"><label class="lbl" for="g-lad">Escalera</label><select id="g-lad" data-gelsel="mk.ladder"><option value="">A mano</option>${(GEL_LADDERS[G.kind]||[]).map(L=>`<option value="${esc(L.n)}"${G.mk.ladder===L.n?' selected':''}>${esc(L.n)}</option>`).join('')}<option value="otra"${G.mk.ladder==='otra'?' selected':''}>Otra…</option></select></div>
+   ${G.mk.ladder==='otra'?`<div class="fld"><label class="lbl" for="g-cus">Tamaños, separados por comas</label><input id="g-cus" data-gelk2="mk.custom" class="mono" value="${esc(G.mk.custom||'')}" placeholder="10000, 8000, 6000, 4000…"></div>`:''}
+   ${(()=>{const L=gelLadderOf(G);if(!L.length)return '';
+     const used=new Set(G.mk.items.map(it=>numV(it.v)));const nx=gelNextLadderVal(G);
+     const src=(GEL_LADDERS[G.kind]||[]).find(x=>x.n===G.mk.ladder);
+     return `<div class="fld"><span class="lbl">Bandas de la escalera${src?` <span class="small mute">· ${esc(src.s)}</span>`:''}</span>
+      <div class="ladchips">${L.map(v=>`<span class="ladchip${used.has(v)?' on':''}${String(v)===nx?' nx':''}">${v.toLocaleString('es-ES')}</span>`).join('')}</div>
+      <span class="help">${nx?`Al pulsar en la imagen se le pone <b>${Number(nx).toLocaleString('es-ES')} ${esc(unit)}</b>, de arriba abajo.`:'Ya están todas colocadas.'}</span></div>`})()}
+   ${G.mk.items.length?`<div class="mkrows">${G.mk.items.map((it,i)=>`<div class="mkrow"><input data-gelmk="v" data-i="${i}" value="${esc(it.v||'')}" placeholder="${G.kind==='page'?'70':'1000'}" aria-label="Valor de la banda ${i+1}"><span class="mono small mute">${Math.round(it.y*1000)/10} %${it.est?' ·<span title="Colocada por el ajuste">≈</span>':''}</span><button type="button" class="btn ghost icon sm" data-a="gel-mkdel" data-i="${i}" aria-label="Quitar">${ic('x')}</button></div>`).join('')}</div>`:'<p class="small mute">Pulsa en la imagen, a la altura de cada banda del marcador, para irlas añadiendo.</p>'}
+   ${(()=>{const f=gelFit(G.mk.items);if(!f)return '';
+     return `<p class="help">Ajuste log(tamaño) frente a migración con ${f.n} bandas · R² ${fmtN(f.r2,4)}${f.r2<0.99?' — revisa si alguna está mal colocada':''}</p>`})()}
+   <div class="vacts">${gelLadderOf(G).length?`<button class="btn sm" data-a="gel-fill">Colocar las que faltan</button>`:''}<button class="btn sm${S.gelMeasure?' primary':''}" data-a="gel-measure">${S.gelMeasure?'Pulsa una banda':'Medir una banda'}</button>${G.mk.items.length?`<button class="btn sm ghost" data-a="gel-mkclear">Vaciar</button>`:''}</div>
+   ${S.gelMeas?`<p class="hint">Esa banda sale a <b>${fmtN(S.gelMeas.v,S.gelMeas.v>=100?0:1)} ${esc(unit)}</b> <span class="small mute">(ajuste con ${S.gelMeas.n} bandas, R² ${fmtN(S.gelMeas.r2,4)}; es una estimación, no una medida exacta)</span></p>`:''}
   </div></details></section>
   <section class="card"><details><summary>Estilo y exportación</summary><div class="form" style="margin-top:10px">
    <div class="fld"><span class="lbl">Fondo</span><div class="seg">${[['white','Blanco'],['black','Negro']].map(([k,l])=>`<button data-a="gel-bg" data-v="${k}" aria-pressed="${G.style.bg===k}">${l}</button>`).join('')}</div></div>
-   ${sl('fs','Tamaño de letra',60,180,5,G.style.fs,v=>v+' %')}
+   <div class="fld half"><label class="lbl" for="g-font">Tipografía</label><select id="g-font" data-gelsel="style.font">${[['sans','Sans (Arial)'],['serif','Serif (Times)'],['mono','Monoespaciada']].map(([k,l])=>`<option value="${k}"${(G.style.font||'sans')===k?' selected':''}>${l}</option>`).join('')}</select></div>
+   <div class="fld half"><label class="lbl" for="g-weight">Grosor</label><select id="g-weight" data-gelsel="style.weight">${[['400','Normal'],['700','Negrita']].map(([k,l])=>`<option value="${k}"${String(G.style.weight||400)===k?' selected':''}>${l}</option>`).join('')}</select></div>
+   ${sl('fs','Tamaño general',50,180,5,G.style.fs,v=>v+' %')}
+   <details class="sub"><summary>Tamaño de cada cosa</summary><div class="form" style="margin-top:8px">
+   ${sl('fsLane','Carriles',50,200,5,G.style.fsLane||100,v=>v+' %')}
+   ${sl('fsMk','Marcador',50,200,5,G.style.fsMk||100,v=>v+' %')}
+   ${sl('fsTitle','Título',50,200,5,G.style.fsTitle||100,v=>v+' %')}
+   </div></details>
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="style.autoFit"${G.style.autoFit!==false?' checked':''}> Encoger o girar las etiquetas si no caben</label></div>
+   <div class="fld half"><label class="lbl" for="g-lpos">Carriles</label><select id="g-lpos" data-gelsel="style.lanePos">${[['top','Encima del gel'],['bottom','Debajo del gel']].map(([k,l])=>`<option value="${k}"${(G.style.lanePos||'top')===k?' selected':''}>${l}</option>`).join('')}</select></div>
    <div class="fld half"><label class="lbl" for="g-panel">Letra del panel</label><input id="g-panel" data-gelk2="style.panel" class="mono" maxlength="3" value="${esc(G.style.panel||'')}" placeholder="A"></div>
-   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="style.title"${G.style.title?' checked':''}> Escribir el título debajo</label></div>
+   <div class="fld"><label class="switch"><input type="checkbox" data-gelchk2="style.title"${G.style.title?' checked':''}> Escribir el título en la figura</label></div>
+   ${G.style.title?`<div class="fld half"><label class="lbl" for="g-tpos">Dónde</label><select id="g-tpos" data-gelsel="style.titlePos">${[['bottom','Debajo'],['top','Arriba']].map(([k,l])=>`<option value="${k}"${(G.style.titlePos||'bottom')===k?' selected':''}>${l}</option>`).join('')}</select></div>
+   <div class="fld half"><label class="lbl" for="g-tal">Alineado</label><select id="g-tal" data-gelsel="style.titleAlign">${[['left','A la izquierda'],['center','Centrado']].map(([k,l])=>`<option value="${k}"${(G.style.titleAlign||'left')===k?' selected':''}>${l}</option>`).join('')}</select></div>`:''}
    <div class="vacts"><button class="btn" data-a="gel-export" data-v="1">PNG 1×</button><button class="btn" data-a="gel-export" data-v="2">PNG 2×</button><button class="btn" data-a="gel-export" data-v="4">PNG 4×</button></div>
    <p class="help">El tamaño que sale al exportar depende del recorte. Para una figura de una columna, las revistas suelen pedir unos 1000 px de ancho como mínimo; con 2× o 4× vas sobrado.</p>
   </div></details></section>
@@ -3744,6 +3944,7 @@ const _renderBody=renderBody;
 renderBody=function(){const a=document.activeElement;const vb=$('#vb');if(vb&&a&&vb.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'){S.pendingBody=true;return}S.pendingBody=false;_renderBody()};
 
 /* ---------- events ---------- */
+document.addEventListener('pointerdown',e=>{if(S.gelCrop&&S.route==='geles'&&e.target&&e.target.id==='gelcv')gelCropDrag(e)});
 document.addEventListener('click',async e=>{
  const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,ty=el.dataset.type,id=el.dataset.id;
  if(el.tagName==='A'&&!['go-import'].includes(a))return;
@@ -3831,7 +4032,14 @@ document.addEventListener('click',async e=>{
   case 'sq-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}sqDelete();break;
   case 'sq-mark':sqMarkPlasmid(el.dataset.v);break;
   case 'go':location.hash=el.dataset.h;break;
-  case 'gel-click':gelClick(e);break;
+  case 'gel-click':if(!S.gelCrop)gelClick(e);break;
+  case 'gel-cropmode':S.gelCrop=!S.gelCrop;if(S.gelCrop){S.gelMeasure=false;S.gelMeas=null}_renderBody();break;
+  case 'gel-autocrop':gelAutoCrop();break;
+  case 'gel-fill':gelFillLadder();break;
+  case 'gel-measure':S.gelMeasure=!S.gelMeasure;if(!S.gelMeasure)S.gelMeas=null;S.gelCrop=false;_renderBody();break;
+  case 'gel-mkclear':S.gel.mk.items=[];S.gelMeas=null;_renderBody();break;
+  case 'gel-uncrop':S.gel.adj.cl=S.gel.adj.cr=S.gel.adj.ct=S.gel.adj.cb=0;_renderBody();break;
+  case 'gel-zoom':{const d=el.dataset.v==='+'?1.25:0.8;S.gelZoom=Math.max(0.5,Math.min(4,(S.gelZoom||1)*d));_renderBody();break}
   case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'experiments', 'gels', 'gelimgs',\n 'chroms', 'seqruns', 'preps', 'plasmidseq']",'Lista copiada');break;
   case 'gel-save':gelSave();break;
   case 'gel-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}gelDelete();break;
@@ -3902,8 +4110,9 @@ document.addEventListener('input',e=>{
    else if(['ct','cb','cl','cr'].includes(k)){S.gel.adj[k]=v/100;lbl&&(lbl.textContent=v+' %')}
    else if(k==='bright'||k==='contrast'){S.gel.adj[k]=v;lbl&&(lbl.textContent=v+' %')}
    else if(k==='x0'||k==='x1'){S.gel.lanes[k]=v/100;lbl&&(lbl.textContent=v+' %')}
-   else if(k==='fs'){S.gel.style.fs=v;lbl&&(lbl.textContent=v+' %')}
+   else if(k==='fs'||k==='fsLane'||k==='fsMk'||k==='fsTitle'){S.gel.style[k]=v;lbl&&(lbl.textContent=v+' %')}
    gelPaint();return}
+  if(t.dataset.gelzoom!==undefined){S.gelZoom=Math.max(0.5,Math.min(4,(numV(t.value)||100)/100));const cv=$('#gelcv');if(cv)cv.style.width=Math.round(S.gelZoom*100)+'%';const sp=t.nextElementSibling&&t.nextElementSibling.nextElementSibling;sp&&(sp.textContent=Math.round(S.gelZoom*100)+' %');return}
   if(t.dataset.codk){const C=codState();C[t.dataset.codk]=t.value;codSave();codRefresh();return}
   if(t.dataset.pdk){const P=pdState();P[t.dataset.pdk]=t.value;pdSave();pdRefresh();return}
   if(t.dataset.asmk){asmState()[t.dataset.asmk]=t.value;asmSave();asmRefresh();return}
@@ -3932,8 +4141,8 @@ document.addEventListener('change',async e=>{
   if(t.dataset.sqchk){S.sq[t.dataset.sqchk]=t.checked;_renderBody();return}
   if(t.dataset.gelchk){S.gel.adj[t.dataset.gelchk]=t.checked;gelPaint();return}
   if(t.dataset.gelchk2){const[a,b]=t.dataset.gelchk2.split('.');S.gel[a][b]=t.checked;_renderBody();return}
-  if(t.dataset.gelsel&&t.dataset.gelsel.includes('.')){const[a,b]=t.dataset.gelsel.split('.');S.gel[a][b]=numV(t.value)??t.value;gelPaint();return}
-  if(t.dataset.gelsel){S.gel[t.dataset.gelsel]=t.value;if(t.dataset.gelsel==='kind'&&!S.gel.mk.items.length)S.gel.mk.unit=GEL_UNIT[t.value];_renderBody();return}
+  if(t.dataset.gelsel&&t.dataset.gelsel.includes('.')){const[a,b]=t.dataset.gelsel.split('.');S.gel[a][b]=numV(t.value)??t.value;if(t.dataset.gelsel==='mk.ladder')_renderBody();else gelPaint();return}
+  if(t.dataset.gelsel){S.gel[t.dataset.gelsel]=t.value;if(t.dataset.gelsel==='kind'){if(!S.gel.mk.items.length)S.gel.mk.unit=GEL_UNIT[t.value];S.gel.mk.ladder='';S.gelMeas=null}_renderBody();return}
   if(t.dataset.codchk){codState()[t.dataset.codchk]=t.checked;codSave();codRefresh();return}
   if(t.dataset.codsite){const C=codState();const n=t.dataset.codsite;C.sites=t.checked?[...new Set([...C.sites,n])]:C.sites.filter(x=>x!==n);codSave();_renderBody();return}
   if(t.dataset.pdsel){pdState()[t.dataset.pdsel]=t.value;pdSave();_renderBody();return}
