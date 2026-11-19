@@ -476,6 +476,29 @@ main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
 .gelwrap{width:100%;overflow:auto;position:relative;background:var(--surface-2);border-radius:var(--r-sm)}
 .gelcanvas.cropping #gelcv{cursor:crosshair;touch-action:none}
 .gelsel{position:absolute;border:2px dashed var(--accent);background:rgba(36,67,196,.14);pointer-events:none;border-radius:2px}
+.aln{font:12px/1.45 var(--f-mono);white-space:pre;margin:0;padding:0;background:none;border:0;overflow-x:auto;color:var(--fg-2)}
+.aln i{font-style:normal;border-radius:2px;padding:0 .5px}
+.aln i.x{background:var(--accent);color:#fff;font-weight:700}
+.aln i.i{background:#1a7f4e;color:#fff;font-weight:700}
+.aln i.d{background:#c62222;color:#fff;font-weight:700}
+.aln i.g{background:var(--surface-2);color:var(--fg-3)}
+.alnm{color:var(--fg-3)}
+.alnl{display:inline-block;width:62px;color:var(--fg-3);font-size:11px}
+.alnp{display:inline-block;width:58px;text-align:right;color:var(--fg-3);font-size:11px}
+.alnwrap{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;background:var(--surface-2)}
+.alnblk{margin-bottom:12px}
+.alnblk:last-child{margin-bottom:0}
+.alnh{font-size:.82rem;color:var(--fg-2);margin-bottom:3px}
+.dmap{margin:10px 0 14px}
+.dmrow{position:relative;height:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.dmrow.feats{height:9px;margin-bottom:3px;opacity:.85}
+.dmrow i{position:absolute;top:0;bottom:0;min-width:1.5px}
+.dmax{position:relative;height:15px;margin-top:2px}
+.dmax span{position:absolute;transform:translateX(-50%);font:10px var(--f-mono);color:var(--fg-3)}
+.dmax span:first-child{transform:none}.dmax span:last-child{transform:translateX(-100%)}
+.dmleg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:.75rem;color:var(--fg-2)}
+.dmleg span{display:inline-flex;align-items:center;gap:4px}
+.dmleg i{width:9px;height:9px;border-radius:2px;display:inline-block}
 .ladchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .ladchip{font:600 .72rem/1 var(--f-mono);padding:4px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg-3)}
 .ladchip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -3328,7 +3351,7 @@ function sqCompare(expRaw,obsRaw,circular){
  const an=sqChain(sqAnchors(exp,obs,k,Math.max(1,Math.floor(exp.length/400))));
  if(!an.length){o.err='No se ha podido alinear: hay demasiadas diferencias.';return o}
  const segs=[];let pe=0,po=0;
- for(const [e,p] of an){if(e>pe||p>po)segs.push([pe,e,po,p]);pe=e+k;po=p+k}
+ for(const [e,p] of an){if(e<pe||p<po)continue;if(e>pe||p>po)segs.push([pe,e,po,p]);pe=e+k;po=p+k}
  segs.push([pe,exp.length,po,obs.length]);
  for(const [e0,e1,p0,p1] of segs){
   const A=exp.slice(e0,e1),B=obs.slice(p0,p1);
@@ -3440,6 +3463,141 @@ function sqListBody(){
   return `<tr data-a="go" data-h="secuenciacion/${esc(d._id)}"><td><b>${esc(d.title||'Sin nombre')}</b></td><td>${esc(d.date?fmtD(d.date):'')}</td><td>${pl?esc(pl.code):'<span class="mute">—</span>'}</td><td class="mono">${d.len?d.len.toLocaleString('es-ES')+' pb':''}</td><td><span class="tag ${c}">${esc(l)}${d.ndiff?` · ${d.ndiff}`:''}</span></td></tr>`}).join('')}
  </tbody></table></div>`;
 }
+/* --- Secuenciación: alineamiento base a base --- */
+const AA3={A:'Ala',R:'Arg',N:'Asn',D:'Asp',C:'Cys',E:'Glu',Q:'Gln',G:'Gly',H:'His',I:'Ile',L:'Leu',K:'Lys',M:'Met',F:'Phe',P:'Pro',S:'Ser',T:'Thr',W:'Trp',Y:'Tyr',V:'Val','*':'fin'};
+function sqRows(o){
+ if(o._rows!==undefined)return o._rows;
+ const exp=o.exp||'',obs=o.obs||'';
+ if(!exp||!obs||o.err){o._rows=null;return null}
+ const by=new Map();
+ for(const d of (o.diffs||[])){const k=d.pos-1;if(!by.has(k))by.set(k,[]);by.get(k).push(d)}
+ by.forEach(v=>v.sort((x,y)=>(x.t==='ins'?0:1)-(y.t==='ins'?0:1)));
+ const a=[],b=[],fl=[],ei=[],oi=[];
+ let e=0,ob=0,guard=0,lim=exp.length+obs.length+16;
+ const used=new Map();
+ while((e<exp.length||ob<obs.length)&&guard++<lim*2){
+  const ds=by.get(e);
+  if(ds&&(used.get(e)||0)<ds.length){
+   const d=ds[used.get(e)||0];used.set(e,(used.get(e)||0)+1);
+   if(d.t==='ins'){for(const c of String(d.alt)){a.push('-');b.push(c);fl.push(3);ei.push(0);oi.push(++ob)}continue}
+   if(d.t==='del'){for(const c of String(d.ref)){a.push(c);b.push('-');fl.push(2);ei.push(++e);oi.push(0)}continue}
+   if(d.t==='sub'){const R=String(d.ref),A=String(d.alt);
+    for(let i=0;i<R.length;i++){a.push(R[i]);b.push(A[i]||'-');fl.push(1);ei.push(++e);oi.push(A[i]?++ob:0)}continue}
+   if(d.t==='big'){const eL=d.end-(d.pos-1),oL=+d.alt||0;
+    for(let i=0;i<eL&&e<exp.length;i++){a.push(exp[e]);b.push('-');fl.push(4);ei.push(++e);oi.push(0)}
+    for(let i=0;i<oL&&ob<obs.length;i++){a.push('-');b.push(obs[ob]);fl.push(4);ei.push(0);oi.push(++ob)}continue}
+  }
+  if(e>=exp.length&&ob>=obs.length)break;
+  const x=exp[e],y=obs[ob];
+  a.push(x||'-');b.push(y||'-');fl.push(x&&x===y?0:(x?2:3));
+  ei.push(x?++e:0);oi.push(y?++ob:0);
+ }
+ const nm=fl.reduce((s,f)=>s+(f===0?1:0),0);
+ o._rows={a,b,fl,ei,oi,n:a.length,match:nm,id:a.length?nm/a.length*100:0};
+ return o._rows;
+}
+function sqFeatReady(o){
+ const Q=S.sq;
+ if(!Q||!Q._feat||!Q._feat.seq)return null;
+ return sqClean(Q._feat.seq)===o.exp?Q._feat:null;
+}
+function sqLoadFeat(){
+ const Q=S.sq;if(!Q||!Q.plasmid){return}
+ const pl=S.data.plasmids.get(Q.plasmid);
+ if(!pl||!pl.seqLen)return;
+ if(Q._featFor===Q.plasmid)return;
+ Q._featFor=Q.plasmid;Q._feat=null;
+ store.get('plasmidseq',Q.plasmid).then(x=>{if(S.sq&&S.sq._featFor===Q.plasmid&&x&&x.seq){S.sq._feat=x;_renderBody()}}).catch(()=>{});
+}
+function sqAnnot(o,d){
+ if(!d)return '';
+ const P=sqFeatReady(o);if(!P||!Array.isArray(P.features))return '';
+ const p0=d.pos-1,p1=Math.max(d.pos,d.end);
+ const hits=P.features.filter(f=>f.s<p1&&f.e>p0);
+ if(!hits.length)return '<span class="mute">fuera de los elementos anotados</span>';
+ const out=[];
+ for(const f of hits.slice(0,2)){
+  let txt=`en <b style="color:${pmCol(f.t)}">${esc(f.n)}</b>`;
+  const cds=f.t==='cds'||f.t==='res'||f.t==='tag';
+  if(cds&&(f.e-f.s)%3===0){
+   if(d.t==='sub'&&String(d.ref).length<=3){
+    const off=f.st===-1?(f.e-p1):(p0-f.s);
+    const ci=Math.floor(off/3);
+    const cs=f.st===-1?f.e-(ci+1)*3:f.s+ci*3;
+    if(cs>=0&&cs+3<=o.exp.length){
+     const g=s=>f.st===-1?revcomp(s.slice(cs,cs+3)).toUpperCase():s.slice(cs,cs+3);
+     const mut=o.exp.slice(0,p0)+String(d.alt)+o.exp.slice(p0+String(d.ref).length);
+     const c1=g(o.exp),c2=g(mut),a1=COD_AA[c1],a2=COD_AA[c2];
+     if(a1&&a2)txt+=` · codón ${ci+1} <span class="mono">${esc(c1)}→${esc(c2)}</span> · ${a1===a2?'<span class="tag good">silenciosa</span>':(a2==='*'?'<span class="tag bad">crea un fin de traducción</span>':`<span class="tag warn">${esc(AA3[a1]||a1)}→${esc(AA3[a2]||a2)}</span>`)}`;
+    }
+   }else if(d.t==='ins'||d.t==='del'){
+    const net=(o.diffs||[]).filter(x=>(x.t==='ins'||x.t==='del')&&(x.pos-1)<f.e&&Math.max(x.pos,x.end)>f.s)
+      .reduce((s2,x)=>s2+(String(x.alt).length-String(x.ref).length),0);
+    const n=Math.abs(net),mas=net>0?'de más':'de menos';
+    txt+=n%3?` · <span class="tag bad">desplaza la pauta de lectura</span> <span class="small mute">${n} ${n===1?'base':'bases'} ${mas} en el elemento</span>`:` · <span class="tag warn">${n/3===1?"1 codón":(n/3)+" codones"} ${mas}, mantiene la pauta</span>`;
+   }
+  }
+  out.push(txt);
+ }
+ return out.join(' · ');
+}
+function sqCtxHTML(o,d,i){
+ const R=sqRows(o);if(!R)return '';
+ let c0=-1,c1=-1;
+ for(let c=0;c<R.n;c++){
+  const ec=R.ei[c];
+  if(c0<0&&((ec>=d.pos&&ec<=Math.max(d.pos,d.end))||(ec===0&&c>0&&R.ei[c-1]>=d.pos-1&&R.ei[c-1]<=d.end)))c0=c;
+  if(c0>=0&&ec>d.end+0)  {c1=c;break}
+ }
+ if(c0<0)return '';
+ if(c1<0)c1=R.n;
+ const W=(window.innerWidth||1000)<560?13:24,s=Math.max(0,c0-W),e=Math.min(R.n,c1+W);
+ const seg=(arr,from,to)=>arr.slice(from,to);
+ const cls=f=>f===0?'':(f===1?'x':(f===4?'g':(f===2?'d':'i')));
+ const line=(arr,from,to)=>seg(arr,from,to).map((ch,k)=>{const f=R.fl[from+k];const c=cls(f);return c?`<i class="${c}">${ch}</i>`:ch}).join('');
+ const mid=seg(R.fl,s,e).map(f=>f===0?'|':(f===1?'·':' ')).join('');
+ const pe=R.ei.slice(s,e).find(v=>v>0)||d.pos, po=R.oi.slice(s,e).find(v=>v>0)||0;
+ return `<div class="alnblk"><div class="alnh"><b class="mono">${d.pos.toLocaleString('es-ES')}${d.end>d.pos?'–'+d.end.toLocaleString('es-ES'):''}</b> · ${esc({sub:'cambio',ins:'inserción',del:'deleción',big:'región distinta'}[d.t]||d.t)}${d.t!=='big'?` <span class="mono">${esc(d.ref||'—')}→${esc(d.alt||'—')}</span>`:` <span class="mono">${d.ref} pb → ${d.alt} pb</span>`} ${sqAnnot(o,d)}</div>
+ <pre class="aln"><span class="alnl">esperada</span> <span class="alnp mono">${pe.toLocaleString('es-ES')}</span> ${line(R.a,s,e)}
+<span class="alnl"></span> <span class="alnp"></span> <span class="alnm">${mid}</span>
+<span class="alnl">obtenida</span> <span class="alnp mono">${po?po.toLocaleString('es-ES'):'—'}</span> ${line(R.b,s,e)}</pre></div>`;
+}
+function sqFullHTML(o){
+ const R=sqRows(o);if(!R)return '';
+ const W=(window.innerWidth||1000)<560?30:60,cap=24000;
+ const n=Math.min(R.n,cap);
+ const cls=f=>f===0?'':(f===1?'x':(f===4?'g':(f===2?'d':'i')));
+ let h='';
+ for(let s=0;s<n;s+=W){
+  const e=Math.min(n,s+W);
+  if(!R.fl.slice(s,e).some(f=>f!==0)&&S.sqOnlyDiff)continue;
+  const pe=R.ei.slice(s,e).find(v=>v>0)||0,po=R.oi.slice(s,e).find(v=>v>0)||0;
+  const ln=(arr)=>arr.slice(s,e).map((ch,k)=>{const c=cls(R.fl[s+k]);return c?`<i class="${c}">${ch}</i>`:ch}).join('');
+  const mid=R.fl.slice(s,e).map(f=>f===0?'|':(f===1?'·':' ')).join('');
+  h+=`<pre class="aln"><span class="alnp mono">${String(pe||'').padStart(7)}</span> ${ln(R.a)}
+<span class="alnp"></span> <span class="alnm">${mid}</span>
+<span class="alnp mono">${String(po||'').padStart(7)}</span> ${ln(R.b)}</pre>`;
+ }
+ return h+(R.n>cap?`<p class="small mute">Se muestran las ${cap.toLocaleString('es-ES')} primeras columnas de ${R.n.toLocaleString('es-ES')}.</p>`:'');
+}
+function sqMapHTML(o){
+ const R=sqRows(o);const L=o.lenExp||(o.exp||'').length;
+ if(!L||!(o.diffs||[]).length)return '';
+ const col={sub:'var(--accent)',ins:'#1a7f4e',del:'#c62222',big:'#c2730a'};
+ const marks=o.diffs.slice(0,600).map(d=>{
+  const x=Math.max(0,Math.min(100,((d.pos-1)/L)*100));
+  const w=Math.max(0.35,Math.min(100-x,((Math.max(1,d.end-d.pos+1))/L)*100));
+  return `<i style="left:${x.toFixed(3)}%;width:${w.toFixed(3)}%;background:${col[d.t]||'var(--accent)'}" title="${d.pos.toLocaleString('es-ES')} · ${d.t}"></i>`;
+ }).join('');
+ const P=sqFeatReady(o);
+ const feats=P&&Array.isArray(P.features)?P.features.slice(0,60).map(f=>{
+  const x=Math.max(0,Math.min(100,(f.s/L)*100)),w=Math.max(0.3,Math.min(100-x,((f.e-f.s)/L)*100));
+  return `<i style="left:${x.toFixed(3)}%;width:${w.toFixed(3)}%;background:${pmCol(f.t)}" title="${esc(f.n)}"></i>`;
+ }).join(''):'';
+ const ticks=[0,0.25,0.5,0.75,1].map(t=>`<span style="left:${t*100}%">${Math.round(t*L).toLocaleString('es-ES')}</span>`).join('');
+ return `<div class="dmap">${feats?`<div class="dmrow feats">${feats}</div>`:''}<div class="dmrow">${marks}</div><div class="dmax">${ticks}</div>
+ <div class="dmleg"><span><i style="background:var(--accent)"></i>cambio</span><span><i style="background:#1a7f4e"></i>inserción</span><span><i style="background:#c62222"></i>deleción</span><span><i style="background:#c2730a"></i>región distinta</span>${feats?'<span class="mute">la banda de arriba son los elementos del mapa</span>':''}</div></div>`;
+}
 function sqDiffHTML(r){
  if(!r.diffs.length)return '';
  const nm={sub:'Cambio',ins:'Inserción',del:'Deleción',big:'Región distinta'};
@@ -3456,6 +3614,7 @@ function sqEdBody(){
  const exps=[...S.data.experiments.values()].sort((a,b)=>natCmp(b.code,a.code));
  const pl=Q.plasmid&&S.data.plasmids.get(Q.plasmid);
  const nObs=sqClean(Q.obs).length,nExp=sqClean(Q.expSeq).length;
+ sqLoadFeat();
  let out;
  if(!r||r.err)out=`<section class="card"><p class="${r&&r.err&&nObs&&nExp?'hint bad':'mute small'}">${esc((r&&r.err)||'')}</p></section>`;
  else{
@@ -3465,7 +3624,15 @@ function sqEdBody(){
     <div class="cstat"><b>${okAll?'Sí':(r.diffs.length.toLocaleString('es-ES'))}</b><span>${okAll?'igual a lo esperado':'diferencia'+(r.diffs.length===1?'':'s')}</span></div>
     ${Q.mode==='full'?`<div class="cstat"><b>${(r.lenObs||0).toLocaleString('es-ES')} pb</b><span>obtenido${r.lenExp&&r.lenExp!==r.lenObs?` · esperaba ${r.lenExp.toLocaleString('es-ES')}`:''}</span></div>`:`<div class="cstat"><b>${r.at?r.at.toLocaleString('es-ES'):'—'}</b><span>posición en lo obtenido</span></div><div class="cstat"><b>${(r.lenObs||0).toLocaleString('es-ES')} pb</b><span>plásmido obtenido</span></div>`}
    </div>
-   ${sqDiffHTML(r)}
+   ${(()=>{const R=sqRows(r);return R?`<div class="cstats" style="margin-top:0"><div class="cstat"><b>${fmtN(R.id,R.id>99.9&&R.id<100?3:2)} %</b><span>de identidad · ${R.match.toLocaleString('es-ES')} de ${R.n.toLocaleString('es-ES')} posiciones</span></div></div>`:''})()}
+   ${sqMapHTML(r)}
+   ${(()=>{if(!r.diffs||!r.diffs.length||!sqRows(r))return sqDiffHTML(r);
+     const V=S.sqView||'ctx';
+     const seg=`<div class="seg" style="margin-bottom:10px">${[['ctx','Con su contexto'],['tabla','En una tabla'],['todo','Alineamiento completo']].map(([k,l])=>`<button data-a="sq-view" data-v="${k}" aria-pressed="${V===k}">${l}</button>`).join('')}</div>`;
+     if(V==='tabla')return seg+sqDiffHTML(r);
+     if(V==='todo')return seg+`<label class="switch" style="margin-bottom:8px"><input type="checkbox" data-a="sq-onlydiff"${S.sqOnlyDiff?' checked':''}> Saltarme los bloques sin cambios</label>`+`<div class="alnwrap">${sqFullHTML(r)}</div>`;
+     return seg+`<div class="alnwrap">${r.diffs.slice(0,60).map((d,i)=>sqCtxHTML(r,d,i)).join('')}</div>`+(r.diffs.length>60?`<p class="small mute">Se muestran las 60 primeras de ${r.diffs.length}. En la tabla están todas.</p>`:'');
+   })()}
    ${(r.notes||[]).map(n=>`<p class="hint">${esc(n)}</p>`).join('')}
    ${okAll&&Q.mode==='region'?'<p class="hint">La región aparece completa y sin cambios. Esto no garantiza que el resto del plásmido esté bien: para eso, compara la secuencia completa.</p>':''}
    ${S.canWrite&&pl?`<div class="vacts"><span class="small mute" style="align-self:center">${esc(pl.code)} · verificada: ${esc(pl.verified||'No')}</span><button class="btn" data-a="sq-mark" data-v="Sí">Marcar como verificada</button><button class="btn" data-a="sq-mark" data-v="Parcial">Parcial</button></div>`:''}
@@ -4027,6 +4194,7 @@ document.addEventListener('click',async e=>{
    a.download=String(P.code||'construccion').replace(/[^\w\-]+/g,'_')+(gb?'.gb':'.fasta');
    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast(gb?'GenBank descargado':'FASTA descargado');break}
   case 'sq-usemap':{const id=S.sq.plasmid;store.get('plasmidseq',id).then(x=>{if(!x||!x.seq){toast('Esa construcción no tiene secuencia guardada.');return}S.sq.expSeq=sqClean(x.seq);S.sq.circular=x.circular!==false;S.sq.res=null;_renderBody();toast(`${x.seq.length.toLocaleString('es-ES')} pb cargadas del mapa`)}).catch(()=>toast('No se ha podido cargar la secuencia.'));break}
+  case 'sq-view':S.sqView=el.dataset.v;_renderBody();break;
   case 'sq-mode':{S.sq.mode=el.dataset.v;_renderBody();break}
   case 'sq-save':sqSave();break;
   case 'sq-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}sqDelete();break;
@@ -4136,6 +4304,7 @@ document.addEventListener('change',async e=>{
  if(t.id==='imp-mkbox'){impState().mkBoxes=t.checked;return}
  if(t.id==='imp-owner'){impState().owner=t.value;return}
  if(t.dataset.buf==='name'){const r=bufState().rows[+t.dataset.i];const L=BLIBM.get(norm(t.value));if(r&&L){r.name=L.name;if(L.mw!=null)r.mw=L.mw;if(L.st!=null){r.sc=L.st;r.su=L.su;r.mode='stock'}else r.mode='solid';if(L.fu&&!(numV(r.fc)>0))r.fu=L.fu;bufSave();_renderBody()}return}
+  if(t.dataset.a==='sq-onlydiff'){S.sqOnlyDiff=t.checked;_renderBody();return}
   if(t.dataset.pmchk){S.pm[t.dataset.pmchk]=t.checked;if(t.dataset.pmchk==='circular')S.pm.dirty=true;_renderBody();return}
   if(t.dataset.sqsel){S.sq[t.dataset.sqsel]=t.value;_renderBody();return}
   if(t.dataset.sqchk){S.sq[t.dataset.sqchk]=t.checked;_renderBody();return}
