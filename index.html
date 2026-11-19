@@ -738,22 +738,29 @@ const T={
  reagents:{route:'reactivos',label:'Reactivos',one:'reactivo',nuevo:'Nuevo reactivo',color:'reagent',icon:'reagent',pre:()=>'R-',status:STOCK,
   fields:[
    {k:'name',l:'Nombre',req:true,ph:'Nombre del producto'},
-   {k:'supplier',l:'Proveedor',half:true,list:()=>uniq('reagents','supplier')},
-   {k:'cat',l:'Referencia de catálogo',half:true},
-   {k:'amount',l:'Formato o cantidad',half:true,ph:'500 ml'},
+   {k:'nameEn',l:'Nombre en inglés',half:true},
+   {k:'kind',l:'Qué es',half:true,ph:'Sales',list:()=>uniq('reagents','kind')},
+   {k:'qty',l:'Cantidad',half:true,ph:'1,5'},
+   {k:'amount',l:'Presentación',half:true,ph:'1 kg'},
+   {k:'brand',l:'Marca',half:true,list:()=>uniq('reagents','brand')},
+   {k:'supplier',l:'Casa suministradora',half:true,list:()=>uniq('reagents','supplier')},
+   {k:'cat',l:'Referencia',half:true},
    {k:'cas',l:'Número CAS',half:true},
+   {k:'formula',l:'Fórmula',half:true},
    {k:'where',l:'Dónde está',ph:'Nevera 4 °C · estante 2',list:()=>uniq('reagents','where')},
    {k:'stock',l:'Stock',t:'select',half:true,opts:STOCK},
    {k:'order',l:'Lista de pedidos',t:'bool',half:true,cl:'Hay que pedirlo'},
    {k:'expiry',l:'Caducidad',t:'date',half:true},
    {k:'opened',l:'Fecha de apertura',t:'date',half:true},
+   {k:'sds',l:'Ficha de seguridad',t:'bool',half:true,cl:'Tenemos la SDS'},
+   {k:'url',l:'Enlace a la ficha',half:true,ph:'https://…'},
    {k:'notes',l:'Notas',t:'textarea'}
   ],
-  search:d=>[d.code,d.name,d.supplier,d.cat,d.cas,d.where,d.notes],
+  search:d=>[d.code,d.name,d.nameEn,d.kind,d.brand,d.supplier,d.cat,d.cas,d.formula,d.where,d.notes],
   cols:[
-   {l:'Proveedor',v:d=>esc(d.supplier)+(d.cat?` <span class="mute mono small">${esc(d.cat)}</span>`:'')},
-   {l:'Stock',v:d=>stockTag(d)},
-   {l:'Caducidad',v:d=>expTag(d.expiry)},
+   {l:'Qué es',v:d=>esc(d.kind)},
+   {l:'Marca',v:d=>esc(d.brand||d.supplier)+(d.cat?` <span class="mute mono small">${esc(d.cat)}</span>`:'')},
+   {l:'Stock',v:d=>stockTag(d)+(d.qty?` <span class="mute small">${esc(d.qty)}${d.amount?' × '+esc(d.amount):''}</span>`:'')},
    {l:'Dónde',v:d=>esc(d.where)}
   ]}
 };
@@ -903,7 +910,7 @@ function renderMain(){const v=VIEWS[S.route];$('#main').innerHTML=v.shell();rend
 function renderBody(){const vb=$('#vb');if(!vb)return;const v=VIEWS[S.route];vb.innerHTML=isLoading()&&v.needsData!==false?loadingHTML():v.body();v.after&&v.after()}
 
 /* ---------- list views ---------- */
-function F(type){return S.filters[type]||(S.filters[type]={q:'',owner:'all',status:'',res:'',sort:'code'})}
+function F(type){return S.filters[type]||(S.filters[type]={q:'',owner:'all',status:'',res:'',kind:'',loc:'',sort:'code'})}
 function listShell(type){
  const t=T[type],f=F(type);
  const owners=memberIds().map(u=>`<option value="${esc(u)}"${f.owner===u?' selected':''}>${u===S.uid?'Míos':'De '+esc(pfirst(u))}</option>`).join('');
@@ -917,12 +924,16 @@ function listShell(type){
   <label class="fsearch">${ic('search')}<input id="flt-q" type="search" placeholder="Filtrar ${t.label.toLowerCase()}…" value="${esc(f.q)}" aria-label="Filtrar"></label>
   <select id="flt-owner" aria-label="Responsable"><option value="all">Todo el grupo</option>${owners}</select>
   <select id="flt-status" aria-label="Estado">${st.map(([v,l])=>`<option value="${esc(v)}"${f.status===v?' selected':''}>${l}</option>`).join('')}</select>
+  ${type==='reagents'?`<select id="flt-kind" aria-label="Qué es"><option value="">De cualquier tipo</option>${uniq('reagents','kind').map(v=>`<option value="${esc(v)}"${f.kind===v?' selected':''}>${esc(v)}</option>`).join('')}</select>
+  <select id="flt-loc" aria-label="Dónde está"><option value="">En cualquier sitio</option>${uniq('reagents','where').map(v=>`<option value="${esc(v)}"${f.loc===v?' selected':''}>${esc(v)}</option>`).join('')}</select>`:''}
   ${t.hasMark?`<select id="flt-res" aria-label="Marcador"><option value="">Cualquier marcador</option>${MARK.map(([v,l])=>`<option value="${v}"${f.res===v?' selected':''}>${v} · ${l}</option>`).join('')}</select>`:''}
   <select id="flt-sort" aria-label="Orden">${[['code','Por código'],['name','Por nombre'],['updated','Editados recientemente']].map(([v,l])=>`<option value="${v}"${f.sort===v?' selected':''}>${l}</option>`).join('')}</select>
  </div><div id="vb"></div>`;
 }
 function matchItem(type,d,f){
  if(f.owner!=='all'&&d.owner!==f.owner)return false;
+ if(f.kind&&String(d.kind||'')!==f.kind)return false;
+ if(f.loc&&String(d.where||'')!==f.loc)return false;
  if(f.res&&!(d.res||[]).includes(f.res))return false;
  if(f.status){
   if(type==='reagents'){
@@ -1188,13 +1199,14 @@ function askPrefix(then){
 function maybeOnboard(){if(S.mode==='live'&&S.uid&&S.canWrite&&S.got.has('members')&&!S.data.members.has(S.uid)&&!S.onboardAsked&&$('#modal').hidden){S.onboardAsked=true;askPrefix()}}
 
 /* ---------- import ---------- */
-const SYN={code:/^(c[oó]d(igo)?|id|code|n[º°o]\.?|num(ero)?|ref(erencia)?( interna)?|#)$/,
+const SYN={code:/^(c[oó]d(igo)?|code)\b|^(id|n[º°o]\.?|num(ero)?|ref(erencia)?( interna)?|#)$/,
  _box:/^(caja|box|gradilla)/,_pos:/^(pos(ici[oó]n)?|position|hueco|well|celda)$/,
  species:/especie|species|organismo|organism/,genotype:/genotipo|genotype|descripci[oó]n|description/,parent:/parental|parent|background/,plasmids:/^pl[aá]smidos?( que porta)?$|^plasmids?$/,
  res:/resist|antibi[oó]tico|antibiotic|marcador|marker|selecci[oó]n/,medium:/^medio|medium|^media$/,temp:/temp/,source:/origen|source|procedencia|fuente|referencia/,status:/^estado|status/,notes:/notas?|notes?|observaciones|comentarios?|comments?/,
  backbone:/backbone|vector/,insert:/inserto|insert|construcci[oó]n/,size:/tama[nñ]o|size|longitud|length|\bpb\b|\bbp\b/,ori:/\bori\b|origen de replicaci/,host:/hu[eé]sped|host|cepa portadora/,verified:/verificad|secuenciad|verified|sequenced/,seqUrl:/mapa|map|url|enlace|link/,method:/m[eé]todo|method/,
  seq:/^secuencia|sequence|^seq|5.?.?3/,target:/diana|target|^gen$|^gene$|regi[oó]n/,purpose:/^uso|purpose|aplicaci[oó]n|finalidad/,partner:/pareja|partner|pair/,plasmid:/pl[aá]smido|plasmid/,
- supplier:/proveedor|supplier|casa comercial|marca|vendor|fabricante/,conc:/concentraci[oó]n|^conc/,cat:/cat[aá]logo|catalog/,cas:/\bcas\b/,amount:/cantidad|amount|quantity|formato/,where:/ubicaci[oó]n|lugar|location|d[oó]nde|estante|nevera/,stock:/stock|existencias/,expiry:/caducidad|expir|vence/,opened:/abierto|apertura|opened/,order:/pedir|pedido|order/,
+ brand:/^marca|^brand|fabricante/,supplier:/proveedor|supplier|casa (comercial|suministradora)|vendor|distribuidor/,
+ kind:/qu[eé] es|categor[ií]a|^tipo$|familia|^clase$/,nameEn:/ingl[eé]s|english/,formula:/f[oó]rmula/,qty:/^cantidad$|^unidades$|^uds/,sds:/^sds$|seguridad|^msds$/,url:/^url$|^enlace|^link$|ficha/,conc:/concentraci[oó]n|^conc/,cat:/cat[aá]logo|catalog|^ref(erencia)?$/,cas:/\bcas\b/,amount:/presentaci[oó]n|formato|amount|quantity|cantidad/,where:/ubicaci[oó]n|lugar|location|d[oó]nde|estante|nevera|congelador|armario|localizaci/,stock:/stock|existencias/,expiry:/caducidad|expir|vence/,opened:/abierto|apertura|opened/,order:/pedir|pedido|order/,
  name:/^(nombre|name|cepa|strain|pl[aá]smido|plasmid|oligo|primer|cebador|reactivo|producto|designaci[oó]n)$/};
 function impTargets(type){const tg=[['code','Código']];if(type!=='reagents')tg.push(['_box','Caja'],['_pos','Posición en la caja']);T[type].fields.filter(f=>f.t!=='loc').forEach(f=>tg.push([f.k,f.l]));return tg}
 function guessMap(type,headers){
@@ -1358,7 +1370,7 @@ function detailBody(type,d){
   if(d.conclusion)h+=`<section class="dsec"><h3>Conclusión</h3><p class="dtxt">${esc(d.conclusion)}</p></section>`;
  }else if(type==='reagents'){
   h+=`<section class="dsec"><h3>Stock</h3><div class="seg" role="group" aria-label="Stock">${STOCK.map(s=>`<button data-a="reag-stock" data-v="${s}" aria-pressed="${(d.stock||'Suficiente')===s}"${S.canWrite?'':' disabled'}>${s}</button>`).join('')}</div>${S.canWrite?`<label class="switch"><input type="checkbox" id="reag-order" data-a="reag-order"${d.order?' checked':''}> En la lista de pedidos</label>`:''}</section>`;
-  h+=`<dl class="kvs">${kv('Proveedor',esc(d.supplier))}${kv('Catálogo',d.cat?`<span class="mono">${esc(d.cat)}</span>`:'')}${kv('CAS',d.cas?`<span class="mono">${esc(d.cas)}</span>`:'')}${kv('Formato',esc(d.amount))}${kv('Dónde está',esc(d.where))}${kv('Caducidad',d.expiry?expTag(d.expiry)+` <span class="small mute">${fmtD(d.expiry)}</span>`:'')}${kv('Abierto',fmtD(d.opened))}${notesKV(d)}</dl>`;
+  h+=`<dl class="kvs">${kv('Qué es',esc(d.kind))}${kv('En inglés',d.nameEn?`<i>${esc(d.nameEn)}</i>`:'')}${kv('Cuánto hay',[d.qty,d.amount].filter(Boolean).map(esc).join(' × '))}${kv('Marca',esc(d.brand))}${kv('Casa suministradora',esc(d.supplier))}${kv('Referencia',d.cat?`<span class="mono">${esc(d.cat)}</span>`:'')}${kv('CAS',d.cas?`<a class="mono" href="https://commonchemistry.cas.org/results?q=${encodeURIComponent(d.cas)}" target="_blank" rel="noopener">${esc(d.cas)}</a>`:'')}${kv('Fórmula',d.formula?`<span class="mono">${esc(d.formula)}</span>`:'')}${kv('Dónde está',esc(d.where))}${kv('Seguridad',d.sds?'<span class="tag good">Tenemos la SDS</span>':'')}${kv('Enlace',d.url?`<a href="${esc(d.url)}" target="_blank" rel="noopener">Ficha del producto</a>`:'')}${kv('Caducidad',d.expiry?expTag(d.expiry)+` <span class="small mute">${fmtD(d.expiry)}</span>`:'')}${kv('Abierto',fmtD(d.opened))}${notesKV(d)}</dl>`;
  }
  h+=`<p class="meta">Responsable: ${esc(pname(d.owner))} · Creado ${d.createdBy?'por '+esc(pname(d.createdBy))+' ':''}${rel(d.createdAt)}${d.updatedAt&&d.updatedAt!==d.createdAt?` · Editado ${d.updatedBy?'por '+esc(pname(d.updatedBy))+' ':''}${rel(d.updatedAt)}`:''}</p>`;
  return h;
@@ -3905,7 +3917,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',async e=>{
  const t=e.target;const ty=Object.keys(T).find(k=>T[k].route===S.route);
- if(ty&&['flt-owner','flt-status','flt-res','flt-sort'].includes(t.id)){F(ty)[t.id.slice(4)]=t.value;_renderBody();return}
+ if(ty&&['flt-owner','flt-status','flt-res','flt-kind','flt-loc','flt-sort'].includes(t.id)){F(ty)[t.id.slice(4)]=t.value;_renderBody();return}
  if(t.id==='f-loc-box'){refreshLoc('');return}
  if(t.id==='proto-ver'&&S.detail){S.detail.ver=t.value===''?null:+t.value;renderDrawer();return}
  if(t.id==='imp-file'&&t.files[0]){readImpFile(t.files[0]);return}
