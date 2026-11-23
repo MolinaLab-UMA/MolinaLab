@@ -499,6 +499,22 @@ main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
 .dmleg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:.75rem;color:var(--fg-2)}
 .dmleg span{display:inline-flex;align-items:center;gap:4px}
 .dmleg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.plgrid{display:grid;grid-template-columns:22px repeat(var(--c),minmax(0,1fr));gap:2px;touch-action:none;user-select:none}
+.plhdr{font:600 10px var(--f-mono);color:var(--fg-3);background:none;border:0;padding:0;cursor:pointer;min-height:18px}
+.plhdr:hover{color:var(--accent)}
+.plwell{aspect-ratio:1;border:1.5px solid var(--line);border-radius:50%;background:var(--surface-2);font:700 9px var(--f-mono);color:transparent;padding:0;cursor:pointer;min-width:0}
+.plwell.on{color:#fff}
+.plwell:hover{border-color:var(--accent)}
+.plbar{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;align-items:center}
+.plchip{display:inline-flex;align-items:center;gap:5px;font:500 .76rem var(--f-body);padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg-2);cursor:pointer}
+.plchip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.plsel{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.plchartwrap{margin-top:14px}
+.plchart{width:100%;height:auto;font-family:var(--f-body)}
+.plchart .plt{font-size:10px;fill:var(--fg-3);font-family:var(--f-mono)}
+.plchart .plax{font-size:11px;fill:var(--fg-2)}
+.plchart .pll{font-size:11px;font-weight:600}
+.plchart .plhit{cursor:crosshair}
 .ladchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .ladchip{font:600 .72rem/1 var(--f-mono);padding:4px 6px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg-3)}
 .ladchip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -610,6 +626,7 @@ const IC={
  prep:'<path d="M4 3h5v13.5a2.5 2.5 0 0 1-5 0z"/><path d="M15 3h5v13.5a2.5 2.5 0 0 1-5 0z"/><path d="M4 11h5M15 9h5"/>',
  exp:'<path d="M9 3h6M10 3v6.5L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 14h9"/>',
  crop:'<path d="M6.5 2.5v15h15"/><path d="M2.5 6.5h15v15"/>',
+ plate:'<rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="7.5" cy="9" r="1.6"/><circle cx="12" cy="9" r="1.6"/><circle cx="16.5" cy="9" r="1.6"/><circle cx="7.5" cy="15" r="1.6"/><circle cx="12" cy="15" r="1.6"/><circle cx="16.5" cy="15" r="1.6"/>',
  map:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2M20.5 12h-2M12 20.5v-2M3.5 12h2"/><path d="M15.5 6.2a7 7 0 0 1 2.3 3.1" stroke-width="3"/><path d="M7 16.5a7 7 0 0 0 4.6 2.9" stroke-width="3"/>',
  seq:'<path d="M5 3c0 6 14 12 14 18M19 3c0 6-14 12-14 18"/><path d="M7.5 6.5h9M6 10h12M6 14h12M7.5 17.5h9" stroke-width="1.6"/>',
  gel:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M12 3v18M16 3v18"/><path d="M5.5 8h3M9.5 11h3M13.5 8h3M5.5 14h3M13.5 15h3" stroke-width="2.2"/>'
@@ -918,6 +935,7 @@ const NAV=[
  {g:'Herramientas'},
  {r:'calculadoras',l:'Calculadoras',i:'calc'},
  {r:'mapas',l:'Mapas',i:'map'},
+ {r:'placas',l:'Placas',i:'plate'},
  {r:'geles',l:'Geles',i:'gel'},
  {r:'secuenciacion',l:'Secuenciación',i:'seq'},
  {g:'Personal'},
@@ -1209,7 +1227,8 @@ function setBody(){
   <section class="card"><h2>Reglas de Firebase</h2><p class="small mute">Las funciones nuevas usan colecciones que las reglas todavía no permiten. Si al guardar sale un aviso de permisos, abre la consola de Firebase, ve a Firestore &rarr; Reglas y sustituye la lista de colecciones que ya hay por esta, dentro de <span class="mono">match /{coleccion}/{id}</span>. Luego pulsa Publicar.</p><pre class="rulebox mono">['strains', 'plasmids', 'oligos', 'reagents', 'protocols',
  'boxes', 'theses', 'milestones', 'meta',
  'experiments', 'gels', 'gelimgs',
- 'chroms', 'seqruns', 'preps', 'plasmidseq']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
+ 'chroms', 'seqruns', 'preps', 'plasmidseq',
+ 'plates', 'platedata']</pre><button class="btn sm" data-a="copy-rules">${ic('copy')}Copiar la lista</button></section><section class="card"><h2>Miembros del grupo</h2>${S.data.members.size?[...S.data.members.entries()].sort((a,b)=>natCmp(a[1].prefix,b[1].prefix)).map(([u,x])=>`<div class="member">${avatar(u,true)}<div class="body"><b>${esc(pname(u))}</b>${u===S.uid?' <span class="tag">Tú</span>':''}<div class="small mute">${esc(x.role||'')} · ${counts(u)} registros</div></div><span class="mono small">${esc(x.prefix||'')}</span></div>`).join(''):'<p class="small mute">Cada persona aparece aquí cuando abre MolinaLab y elige sus iniciales.</p>'}
    <p class="small mute" style="margin-top:10px">Para sumar a alguien, añade su correo a la lista de acceso (consola de Firebase → Firestore Database → Reglas) y pásale la dirección de la web. Aparecerá aquí cuando entre por primera vez.</p></section>
  </div><div class="stack">
   <section class="card stack"><h2>Exportar</h2><p class="small mute">CSV con punto y coma, listo para abrir en Excel. Caja y posición van en columnas separadas, así que se puede volver a importar.</p><div class="vacts">${TK.map(t=>`<button class="btn sm" data-a="export" data-type="${t}">${ic('download')}${T[t].label}</button>`).join('')}</div><div class="vacts"><button class="btn sm" data-a="backup-json">${ic('download')}Copia completa (JSON)</button></div></section>
@@ -1577,7 +1596,7 @@ function addMenu(){
  if(!S.canWrite){toast('Tienes acceso de solo lectura.');return}
  openSheet('Añadir',TK.map(t=>`<button data-a="new" data-type="${t}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo}</button>`).join('')+`<button data-a="new-box">${ic('freezer')}Nueva caja</button><button data-a="proto-new">${ic('protocol')}Nuevo protocolo</button>${S.uid?`<button data-a="note-new">${ic('note')}Nota privada</button>`:''}<a href="#importar">${ic('import')}Importar una lista</a>`);
 }
-function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['experimentos','Experimentos','exp'],['preparaciones','Preparaciones','prep'],['calculadoras','Calculadoras','calc'],['mapas','Mapas','map'],['geles','Geles','gel'],['secuenciacion','Secuenciación','seq'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
+function moreMenu(){openSheet('Más',[['reactivos','Reactivos','reagent'],['congelador','Congelador','freezer'],['protocolos','Protocolos','protocol'],['tesis','Tesis','thesis'],['experimentos','Experimentos','exp'],['preparaciones','Preparaciones','prep'],['calculadoras','Calculadoras','calc'],['mapas','Mapas','map'],['placas','Placas','plate'],['geles','Geles','gel'],['secuenciacion','Secuenciación','seq'],['mi-espacio','Mi espacio','me'],['importar','Importar','import'],['ajustes','Ajustes','settings']].map(([r,l,i])=>`<a href="#${r}">${ic(i)}${l}</a>`).join(''))}
 function cellMenu(box,pos){
  if(!S.canWrite)return;const b=S.data.boxes.get(box);
  openSheet(`${b?b.name:'Caja'} · ${pos}`,['strains','plasmids','oligos'].map(t=>`<button data-a="new-at" data-type="${t}" data-box="${box}" data-pos="${pos}"><span class="cap" style="--cap:var(--c-${T[t].color})"></span>${T[t].nuevo} aquí</button>`).join(''));
@@ -4087,6 +4106,430 @@ function pmAddFeature(){
  }});
 }
 
+/* --- Placas --- */
+const PL_FMT={6:[2,3],12:[3,4],24:[4,6],48:[6,8],96:[8,12],384:[16,24]};
+const PL_RL='ABCDEFGHIJKLMNOP';
+const plW=(r,c)=>PL_RL[r]+(c+1);
+const plDims=f=>PL_FMT[f]||PL_FMT[96];
+function plCol(i){if(i<0)return 'var(--fg-3)';return (pmDark()?PM_PAL_D:PM_PAL_L)[i%8]}
+function plDef(){return {code:'',name:'',date:new Date().toISOString().slice(0,10),kind:'growth',fmt:96,
+ conds:[],wells:{},unit:'DO 600 nm',tunit:'h',strain:'',experiment:'',
+ opt:{win:5,smooth:1,floor:0.02,log:false,band:true},notes:''}}
+const plCond=(P,k)=>(P.conds||[]).find(c=>c.k===k);
+function plAddCond(P,label){
+ const k='c'+(1+(P.conds||[]).reduce((m,c)=>Math.max(m,+String(c.k).slice(1)||0),0));
+ const used=new Set(P.conds.map(c=>c.i));let i=0;while(used.has(i)&&i<8)i++;
+ P.conds.push({k,l:label||('Condición '+P.conds.length+1),i:i%8});return k;
+}
+function plWellsOf(P,k){return Object.keys(P.wells||{}).filter(w=>P.wells[w]===k)}
+function plStats(P){
+ const n=Object.keys(P.wells||{}).length,bl=plWellsOf(P,'blank').length;
+ return {n,bl,conds:(P.conds||[]).length,muestras:n-bl};
+}
+/* --- lectura del archivo del lector de placas --- */
+const PL_WRE=/^([A-P])\s*0?(\d{1,2})$/i;
+function plNorm(w){const m=String(w).trim().match(PL_WRE);return m?m[1].toUpperCase()+(+m[2]):''}
+function plTime(v){
+ if(v===null||v===undefined)return null;
+ const s=String(v).trim();
+ if(!s)return null;
+ let m=s.match(/^(\d+):([0-5]?\d)(?::([0-5]?\d))?$/);
+ if(m)return (+m[1])*60+(+m[2])+(m[3]?+m[3]/60:0);
+ m=s.match(/^(?:(\d+(?:[.,]\d+)?)\s*h)?\s*(?:(\d+(?:[.,]\d+)?)\s*m(?:in)?)?\s*(?:(\d+(?:[.,]\d+)?)\s*s)?$/i);
+ if(m&&(m[1]||m[2]||m[3]))return (+(m[1]||0).toString().replace(',','.'))*60+(+(m[2]||0).toString().replace(',','.'))+(+(m[3]||0).toString().replace(',','.'))/60;
+ const n=numV(s);return n===null?null:n;
+}
+function plParse(rows){
+ rows=(rows||[]).map(r=>Array.isArray(r)?r:[r]);
+ const out={t:[],wells:{},shape:'',tguess:'min'};
+ /* A — ancho: una columna de tiempo y una columna por pocillo */
+ for(let h=0;h<Math.min(rows.length,40);h++){
+  const hdr=rows[h]||[];
+  const idx=hdr.map(plNorm);
+  const nW=idx.filter(Boolean).length;
+  if(nW<4)continue;
+  let tc=-1;
+  for(let c=0;c<hdr.length;c++){if(!idx[c]&&/tiempo|time|hora|cycle|ciclo|min|^t$/i.test(String(hdr[c]||''))){tc=c;break}}
+  if(tc<0)for(let c=0;c<hdr.length;c++){if(!idx[c]){tc=c;break}}
+  if(tc<0)continue;
+  const ws=[];idx.forEach((w,c)=>{if(w)ws.push([w,c])});
+  for(const [w] of ws)out.wells[w]=[];
+  for(let r=h+1;r<rows.length;r++){
+   const row=rows[r]||[];const tv=plTime(row[tc]);
+   if(tv===null)continue;
+   let any=false;
+   for(const [w,c] of ws){const v=numV(row[c]);out.wells[w].push(v===null?null:v);if(v!==null)any=true}
+   if(any)out.t.push(tv); else {for(const [w] of ws)out.wells[w].pop()}
+  }
+  if(out.t.length>1){out.shape='ancho';return plFinish(out)}
+  out.t=[];out.wells={};
+ }
+ /* B — largo: pocillo, tiempo, valor */
+ for(let h=0;h<Math.min(rows.length,40);h++){
+  const hdr=(rows[h]||[]).map(x=>String(x||'').toLowerCase());
+  const wc=hdr.findIndex(x=>/^(pocillo|well|posici)/.test(x));
+  const tc=hdr.findIndex(x=>/^(tiempo|time|hora|cycle|ciclo)/.test(x));
+  const vc=hdr.findIndex(x=>/^(valor|value|od|do|abs|a600|measure|lectura|se[ñn]al)/.test(x));
+  if(wc<0||tc<0||vc<0)continue;
+  const ts=new Map();
+  for(let r=h+1;r<rows.length;r++){
+   const row=rows[r]||[];const w=plNorm(row[wc]),t=plTime(row[tc]),v=numV(row[vc]);
+   if(!w||t===null||v===null)continue;
+   if(!ts.has(t))ts.set(t,{});ts.get(t)[w]=v;
+  }
+  if(ts.size>1){
+   const times=[...ts.keys()].sort((a,b)=>a-b);
+   const ws=[...new Set(times.flatMap(t=>Object.keys(ts.get(t))))];
+   out.t=times;for(const w of ws)out.wells[w]=times.map(t=>{const v=ts.get(t)[w];return v===undefined?null:v});
+   out.shape='largo';return plFinish(out);
+  }
+ }
+ /* C — bloques: una rejilla por tiempo */
+ {
+  const blocks=[];let cur=null,lastT=null;
+  for(let r=0;r<rows.length;r++){
+   const row=rows[r]||[];const f=String(row[0]||'').trim();
+   const t=plTime(row.find(x=>plTime(x)!==null&&/[:h]/.test(String(x))));
+   if(t!==null&&!/^[A-P]$/i.test(f))lastT=t;
+   if(/^[A-P]$/i.test(f)){
+    const vals=row.slice(1).map(x=>numV(x));
+    if(vals.filter(v=>v!==null).length>=3){
+     if(!cur||cur.rows[f.toUpperCase()]){if(cur)blocks.push(cur);cur={t:lastT,rows:{}}}
+     cur.rows[f.toUpperCase()]=vals;
+    }
+   }
+  }
+  if(cur)blocks.push(cur);
+  if(blocks.length>1){
+   blocks.forEach((b,i)=>{if(b.t===null)b.t=i});
+   out.t=blocks.map(b=>b.t);
+   for(const b of blocks)for(const [R,vals] of Object.entries(b.rows))vals.forEach((v,c)=>{
+    const w=R+(c+1);if(!out.wells[w])out.wells[w]=blocks.map(()=>null);
+   });
+   blocks.forEach((b,bi)=>{for(const [R,vals] of Object.entries(b.rows))vals.forEach((v,c)=>{const w=R+(c+1);if(out.wells[w])out.wells[w][bi]=v})});
+   out.shape='bloques';return plFinish(out);
+  }
+ }
+ return null;
+}
+function plFinish(o){
+ const ws=Object.keys(o.wells);
+ if(!ws.length||o.t.length<2)return null;
+ const ord=[...o.t.keys()].sort((a,b)=>o.t[a]-o.t[b]);
+ o.t=ord.map(i=>o.t[i]);
+ for(const w of ws)o.wells[w]=ord.map(i=>o.wells[w][i]);
+ const mx=o.t[o.t.length-1];
+ o.tguess=mx<=72?'h':(mx<=5000?'min':'s');
+ return o;
+}
+/* --- análisis de crecimiento --- */
+const PL_TF={h:1,min:1/60,s:1/3600};
+function plSmooth(v,k){
+ if(!(k>1))return v.slice();
+ const out=v.slice(),h=Math.floor(k/2);
+ for(let i=0;i<v.length;i++){
+  let s=0,n=0;
+  for(let j=Math.max(0,i-h);j<=Math.min(v.length-1,i+h);j++)if(v[j]!==null){s+=v[j];n++}
+  out[i]=n?s/n:null;
+ }
+ return out;
+}
+function plWellPar(t,v,o){
+ const fl=o.floor||0,win=Math.max(3,o.win||5);
+ let best=null;
+ for(let i=0;i+win<=v.length;i++){
+  const xs=[],ys=[];
+  for(let j=i;j<i+win;j++){if(v[j]===null||v[j]<=fl)continue;xs.push(t[j]);ys.push(Math.log(v[j]))}
+  if(xs.length<3)continue;
+  const n=xs.length,sx=xs.reduce((a,b)=>a+b,0),sy=ys.reduce((a,b)=>a+b,0);
+  const sxx=xs.reduce((a,b)=>a+b*b,0),sxy=xs.reduce((a,b,k2)=>a+b*ys[k2],0);
+  const d=n*sxx-sx*sx;if(Math.abs(d)<1e-12)continue;
+  const b=(n*sxy-sx*sy)/d,a=(sy-b*sx)/n;
+  const mean=sy/n,sst=ys.reduce((s,y)=>s+Math.pow(y-mean,2),0);
+  const sse=ys.reduce((s,y,k2)=>s+Math.pow(y-(a+b*xs[k2]),2),0);
+  if(b>0&&(!best||b>best.mu))best={mu:b,a,r2:sst>1e-12?1-sse/sst:1,t0:xs[0],t1:xs[n-1]};
+ }
+ const good=v.filter(x=>x!==null);
+ const odmax=good.length?Math.max(...good):null;
+ let n0=null;for(let i=0;i<v.length;i++)if(v[i]!==null&&v[i]>0){n0=v[i];break}
+ let auc=0;
+ for(let i=1;i<v.length;i++)if(v[i]!==null&&v[i-1]!==null)auc+=(v[i]+v[i-1])/2*(t[i]-t[i-1]);
+ let lag=null;
+ if(best&&n0&&n0>0){const L=(Math.log(n0)-best.a)/best.mu;if(isFinite(L)&&L>=-1)lag=Math.max(0,L)}
+ return {mu:best?best.mu:null,td:best&&best.mu>0?Math.LN2/best.mu:null,r2:best?best.r2:null,
+  lag,odmax,auc,tmu:best?(best.t0+best.t1)/2:null};
+}
+function plAnalyse(P,D){
+ if(!D||!D.t||D.t.length<2)return null;
+ const f=PL_TF[P.tunit]||1,t=D.t.map(x=>x*f);
+ const o=P.opt||{};
+ const bw=plWellsOf(P,'blank').filter(w=>D.wells[w]);
+ const bl=t.map((_,i)=>{
+  if(!bw.length)return 0;
+  const xs=bw.map(w=>D.wells[w][i]).filter(x=>x!==null&&x!==undefined);
+  return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0;
+ });
+ const per={};
+ for(const w of Object.keys(D.wells)){
+  const k=P.wells[w];
+  if(!k||k==='blank')continue;
+  const raw=D.wells[w].map((x,i)=>x===null||x===undefined?null:x-bl[i]);
+  const v=plSmooth(raw,o.smooth||1);
+  per[w]={k,v,par:plWellPar(t,v,o)};
+ }
+ const byCond={};
+ for(const c of (P.conds||[])){
+  if(c.k==='blank')continue;
+  const ws=Object.keys(per).filter(w=>per[w].k===c.k);
+  if(!ws.length)continue;
+  const mean=[],sd=[];
+  for(let i=0;i<t.length;i++){
+   const xs=ws.map(w=>per[w].v[i]).filter(x=>x!==null);
+   if(!xs.length){mean.push(null);sd.push(0);continue}
+   const m=xs.reduce((a,b)=>a+b,0)/xs.length;
+   mean.push(m);
+   sd.push(xs.length>1?Math.sqrt(xs.reduce((s,x)=>s+Math.pow(x-m,2),0)/(xs.length-1)):0);
+  }
+  const ag=key=>{const xs=ws.map(w=>per[w].par[key]).filter(x=>x!==null&&isFinite(x));
+   if(!xs.length)return {m:null,s:null,n:0};
+   const m=xs.reduce((a,b)=>a+b,0)/xs.length;
+   return {m,s:xs.length>1?Math.sqrt(xs.reduce((s2,x)=>s2+Math.pow(x-m,2),0)/(xs.length-1)):0,n:xs.length}};
+  byCond[c.k]={c,ws,mean,sd,n:ws.length,mu:ag('mu'),td:ag('td'),lag:ag('lag'),odmax:ag('odmax'),auc:ag('auc'),r2:ag('r2')};
+ }
+ return {t,bl,per,byCond,nBlank:bw.length};
+}
+/* --- gráfica --- */
+function plChart(P,A,sel){
+ const ks=(P.conds||[]).map(c=>c.k).filter(k=>A.byCond[k]&&(!sel||sel.includes(k))).slice(0,8);
+ if(!ks.length)return '<p class="small mute">Elige alguna condición.</p>';
+ const log=!!(P.opt&&P.opt.log),band=!(P.opt&&P.opt.band===false);
+ const W=760,H=380,mL=62,mR=(ks.length<=4?118:16),mT=14,mB=46;
+ const t=A.t,tmax=Math.max(...t),tmin=Math.min(...t);
+ let lo=Infinity,hi=-Infinity;
+ for(const k of ks)A.byCond[k].mean.forEach((m,i)=>{if(m===null)return;
+  const s=band?A.byCond[k].sd[i]:0;hi=Math.max(hi,m+s);lo=Math.min(lo,m-s)});
+ if(!isFinite(hi))return '<p class="small mute">No hay datos que dibujar.</p>';
+ if(log){lo=Math.max(lo,1e-3);hi=Math.max(hi,lo*1.5)}else{lo=Math.min(0,lo);hi=hi*1.06}
+ const yv=v=>log?Math.log10(Math.max(v,1e-3)):v;
+ const y0=yv(lo),y1=yv(hi);
+ const X=v=>mL+(v-tmin)/Math.max(1e-9,tmax-tmin)*(W-mL-mR);
+ const Y=v=>mT+(1-(yv(v)-y0)/Math.max(1e-9,y1-y0))*(H-mT-mB);
+ const nice=(a,b,n)=>{const r=(b-a)/n,p=Math.pow(10,Math.floor(Math.log10(r)));const s=[1,2,2.5,5,10].find(x=>x*p>=r)*p;
+  const out=[];for(let v=Math.ceil(a/s)*s;v<=b+1e-9;v+=s)out.push(+v.toFixed(10));return out};
+ const yt=log?[]:nice(lo,hi,5),xt=nice(tmin,tmax,6);
+ if(log){for(let e=Math.floor(y0);e<=Math.ceil(y1);e++){const v=Math.pow(10,e);if(yv(v)>=y0-1e-9&&yv(v)<=y1+1e-9)yt.push(v)}}
+ const esc2=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+ let g='';
+ for(const v of yt)g+=`<line x1="${mL}" y1="${Y(v).toFixed(1)}" x2="${W-mR}" y2="${Y(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/><text x="${mL-8}" y="${(Y(v)+3.5).toFixed(1)}" class="plt" text-anchor="end">${fmtN(v,v<1?2:(v<10?1:0))}</text>`;
+ for(const v of xt)g+=`<text x="${X(v).toFixed(1)}" y="${H-mB+18}" class="plt" text-anchor="middle">${fmtN(v,v<10?1:0)}</text>`;
+ g+=`<line x1="${mL}" y1="${H-mB}" x2="${W-mR}" y2="${H-mB}" stroke="var(--line-2)" stroke-width="1.5"/>`;
+ let s2='';const dlab=[];
+ ks.forEach(k=>{
+  const B=A.byCond[k],col=plCol(B.c.i);
+  const pts=[],up=[],dn=[];
+  t.forEach((tv,i)=>{const m=B.mean[i];if(m===null)return;
+   pts.push(`${X(tv).toFixed(1)},${Y(m).toFixed(1)}`);
+   up.push(`${X(tv).toFixed(1)},${Y(m+B.sd[i]).toFixed(1)}`);
+   dn.unshift(`${X(tv).toFixed(1)},${Y(Math.max(m-B.sd[i],log?1e-3:-1e9)).toFixed(1)}`);});
+  if(!pts.length)return;
+  if(band&&B.n>1)s2+=`<polygon points="${up.concat(dn).join(' ')}" fill="${col}" opacity=".15"/>`;
+  s2+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if(ks.length<=4){const last=pts[pts.length-1].split(',');
+   dlab.push({x:+last[0]+8,y:+last[1],t:esc2(B.c.l).slice(0,16),c:col})}
+ });
+ if(dlab.length){
+  dlab.sort((a,b)=>a.y-b.y);
+  const G=13,top=mT+5,bot=H-mB-2;
+  for(let i=1;i<dlab.length;i++)if(dlab[i].y-dlab[i-1].y<G)dlab[i].y=dlab[i-1].y+G;
+  const over=dlab[dlab.length-1].y-bot;
+  if(over>0)for(const d of dlab)d.y=Math.max(top,d.y-over);
+  for(let i=1;i<dlab.length;i++)if(dlab[i].y-dlab[i-1].y<G)dlab[i].y=dlab[i-1].y+G;
+  for(const d of dlab)s2+=`<text x="${d.x.toFixed(1)}" y="${(d.y+3.5).toFixed(1)}" class="pll" fill="${d.c}">${d.t}</text>`;
+ }
+ const hov=t.map((tv,i)=>`<rect x="${(X(tv)-(W-mL-mR)/t.length/2).toFixed(1)}" y="${mT}" width="${Math.max(2,(W-mL-mR)/t.length).toFixed(1)}" height="${H-mT-mB}" fill="transparent" class="plhit" data-i="${i}"><title>${fmtN(tv,2)} h — ${ks.map(k=>`${esc2(A.byCond[k].c.l)}: ${A.byCond[k].mean[i]===null?'—':fmtN(A.byCond[k].mean[i],3)}`).join(' · ')}</title></rect>`).join('');
+ return `<svg viewBox="0 0 ${W} ${H}" class="plchart" role="img" aria-label="Curvas de crecimiento">
+ <text x="14" y="${(mT+(H-mT-mB)/2).toFixed(1)}" class="plax" transform="rotate(-90 14 ${(mT+(H-mT-mB)/2).toFixed(1)})" text-anchor="middle">${esc2(P.unit||'DO')}${log?' (log)':''}</text>
+ <text x="${(mL+(W-mL-mR)/2).toFixed(1)}" y="${H-6}" class="plax" text-anchor="middle">Tiempo (h)</text>
+ ${g}${s2}${hov}</svg>
+ <div class="pmleg">${ks.map(k=>`<span><i class="sw" style="background:${plCol(A.byCond[k].c.i)}"></i>${esc(A.byCond[k].c.l)} <span class="mute">n=${A.byCond[k].n}</span></span>`).join('')}</div>`;
+}
+/* --- Placas: estado --- */
+function plOpen(id){
+ if(id==='nueva'){S.pl={_id:'',...plDef(),dirty:true};S.plD=null;return}
+ const d=S.data.plates&&S.data.plates.get(id);
+ if(!d)return;
+ S.pl={_id:id,...plDef(),...clean(d),loading:true};S.plD=null;
+ store.get('platedata',id).then(x=>{
+  if(!S.pl||S.pl._id!==id)return;
+  S.pl.loading=false;if(x&&x.t)S.plD=x;_renderBody();
+ }).catch(()=>{if(S.pl)S.pl.loading=false;_renderBody()});
+}
+async function plSave(){
+ const P=S.pl;if(!P)return;
+ if(!P.name&&!P.code){toast('Ponle al menos un nombre.');return}
+ try{
+  const id=P._id||store.newId('plates');
+  const doc={code:P.code,name:P.name,date:P.date,kind:P.kind,fmt:P.fmt,conds:P.conds,wells:P.wells,
+   unit:P.unit,tunit:P.tunit,strain:P.strain,experiment:P.experiment,opt:P.opt,notes:P.notes,
+   nData:S.plD?S.plD.t.length:0,updatedAt:now(),updatedBy:S.uid};
+  if(!P._id)doc.createdAt=now();
+  await store.set('plates',id,doc);
+  if(S.plD&&S.plD._dirty){
+   const D={t:S.plD.t,wells:{},shape:S.plD.shape||'',updatedAt:now()};
+   for(const [w,v] of Object.entries(S.plD.wells))D.wells[w]=v.map(x=>x===null?null:Math.round(x*1e5)/1e5);
+   await store.set('platedata',id,D);S.plD._dirty=false;
+  }
+  if(!P._id){P._id=id;location.hash='#placas/'+id}
+  P.dirty=false;logActivity(P._id?'actualizó':'creó',null,null,`la placa ${P.code||P.name}`);
+  toast('Placa guardada');_renderBody();
+ }catch(e){toast(e&&e.code==='permission-denied'?'Faltan plates y platedata en las reglas de Firebase. Las tienes en Ajustes.':writeErr(e))}
+}
+async function plReadFile(file){
+ if(!file)return;
+ try{
+  let rows;
+  if(/\.(xlsx|xlsm|xls)$/i.test(file.name)){
+   await loadXLSX();
+   const buf=await file.arrayBuffer();
+   const wb=XLSX.read(buf,{type:'array'});
+   rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null});
+  }else{
+   const txt=await file.text();
+   rows=parseText(txt);
+  }
+  const D=plParse(rows);
+  if(!D)throw new Error('No se han reconocido los pocillos ni los tiempos');
+  D._dirty=true;S.plD=D;S.pl.tunit=D.tguess;S.pl.dirty=true;
+  const dt=D.t.length>2?(D.t[D.t.length-1]-D.t[0])/(D.t.length-1)*(PL_TF[D.tguess]||1):0.25;
+  S.pl.opt.win=Math.max(5,Math.min(15,Math.round(2/Math.max(dt,0.01))|1||9));
+  const have=new Set(Object.keys(S.pl.wells||{}));
+  if(!have.size){/* nada */}
+  _renderBody();
+  toast(`${Object.keys(D.wells).length} pocillos y ${D.t.length} tiempos leídos (formato ${D.shape})`);
+ }catch(e){toast('No se ha podido leer: '+(e.message||'formato no reconocido'))}
+}
+function plPaintWell(w){
+ const P=S.pl,k=S.plPaint;
+ if(k===undefined||k===null)return;
+ if(k==='')delete P.wells[w]; else P.wells[w]=k;
+ P.dirty=true;
+}
+function plFill(kind,i){
+ const P=S.pl,[R,C]=plDims(P.fmt);
+ const ws=[];
+ if(kind==='row')for(let c=0;c<C;c++)ws.push(plW(i,c));
+ else if(kind==='col')for(let r=0;r<R;r++)ws.push(plW(r,i));
+ else for(let r=0;r<R;r++)for(let c=0;c<C;c++)ws.push(plW(r,c));
+ const k=S.plPaint;
+ const all=ws.every(w=>P.wells[w]===k);
+ for(const w of ws){if(all||k==='')delete P.wells[w];else P.wells[w]=k}
+ P.dirty=true;_renderBody();
+}
+/* --- Placas: vistas --- */
+function plShell(){
+ const ed=S.sub&&S.sub!=='';const P=S.pl;
+ return `<div class="vhead"><div>${ed?`<a class="btn sm ghost" href="#placas" style="margin:0 0 6px -8px">${ic('back')}Placas</a>`:''}<h1>${ed?(P&&(P.code||P.name)?esc(P.code||P.name):'Placa'):'Placas'}</h1><p class="lede">${ed?'La plantilla de la placa y las curvas de crecimiento.':'Plantillas de 96 pocillos, curvas de crecimiento y parámetros de cada condición.'}</p></div>
+ <div class="vacts">${ed?(S.canWrite?`<button class="btn primary" data-a="pl-save">${ic('check')}Guardar</button>`:''):(S.canWrite?`<a class="btn primary" href="#placas/nueva">${ic('plus')}Nueva placa</a>`:'')}</div></div><div id="vb"></div>`;
+}
+function plListBody(){
+ lazySub('plates');
+ const ds=[...(S.data.plates||new Map()).values()].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||natCmp(a.code,b.code));
+ if(!ds.length)return `<section class="card"><h2>Todavía no hay placas</h2><p class="small mute">Pulsa «Nueva placa», dibuja la plantilla diciendo qué hay en cada pocillo y sube el archivo del lector. Sale la curva de cada condición con su media y su desviación, y la tasa de crecimiento, el tiempo de duplicación y la fase de latencia.</p><p class="small mute">Si al guardar da un error de permisos, añade <span class="mono">plates</span> y <span class="mono">platedata</span> a la lista de Ajustes.</p></section>`;
+ return `<div class="scrollx"><table class="tbl"><thead><tr><th>Código</th><th>Nombre</th><th>Fecha</th><th>Pocillos</th><th>Lecturas</th></tr></thead><tbody>${ds.map(d=>`<tr data-a="go" data-h="placas/${esc(d._id)}"><td><span class="code">${esc(d.code||'—')}</span></td><td><b>${esc(d.name||'')}</b></td><td class="mono small">${esc(d.date||'')}</td><td class="mono small">${Object.keys(d.wells||{}).length}</td><td class="mono small">${d.nData?d.nData+' tiempos':'sin datos'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function plGrid(P){
+ const [R,C]=plDims(P.fmt);
+ let h=`<div class="plgrid" style="--c:${C}"><button class="plhdr" data-a="pl-fill" data-k="all" title="Toda la placa">·</button>`;
+ for(let c=0;c<C;c++)h+=`<button class="plhdr" data-a="pl-fill" data-k="col" data-i="${c}">${c+1}</button>`;
+ for(let r=0;r<R;r++){
+  h+=`<button class="plhdr" data-a="pl-fill" data-k="row" data-i="${r}">${PL_RL[r]}</button>`;
+  for(let c=0;c<C;c++){
+   const w=plW(r,c),k=P.wells[w],cd=k==='blank'?{l:'Blanco',i:-1}:plCond(P,k);
+   const col=k?(k==='blank'?'var(--fg-3)':plCol(cd?cd.i:0)):'';
+   const n=k&&k!=='blank'?(P.conds.findIndex(x=>x.k===k)+1):(k==='blank'?'B':'');
+   h+=`<button class="plwell${k?' on':''}" data-w="${w}" style="${col?`background:${col};border-color:${col}`:''}" title="${w}${cd?' · '+esc(cd.l):''}" aria-label="${w}${cd?' '+esc(cd.l):' vacío'}">${n}</button>`;
+  }
+ }
+ return h+'</div>';
+}
+function plEdBody(){
+ if(!S.pl||(S.sub!=='nueva'&&S.pl._id!==S.sub)){plOpen(S.sub);if(!S.pl)return '<section class="card"><p class="mute small">Esta placa ya no existe.</p></section>'}
+ const P=S.pl;
+ if(P.loading)return '<section class="card"><p class="mute small">Cargando las lecturas…</p></section>';
+ const D=S.plD,A=D?plAnalyse(P,D):null;
+ const st=plStats(P);
+ const miss=D?Object.keys(P.wells).filter(w=>P.wells[w]&&!D.wells[w]).length:0;
+ const sel=S.plSel&&S.plSel.length?S.plSel:(P.conds||[]).filter(c=>c.k!=='blank').map(c=>c.k).slice(0,8);
+ const fld=(k,l,t,ph,half)=>`<div class="fld${half?' half':''}"><label class="lbl" for="pl-${k}">${l}</label><input id="pl-${k}" type="${t||'text'}" data-plk="${k}" value="${esc(P[k]||'')}" placeholder="${esc(ph||'')}"></div>`;
+ return `<div class="calc"><div class="pmview">
+  <div class="plbar">${(P.conds||[]).map((c,i)=>`<button class="plchip${S.plPaint===c.k?' on':''}" data-a="pl-pick" data-k="${c.k}"><i class="sw" style="background:${plCol(c.i)}"></i>${i+1}. ${esc(c.l)} <span class="mute">${plWellsOf(P,c.k).length}</span></button>`).join('')}
+   <button class="plchip${S.plPaint==='blank'?' on':''}" data-a="pl-pick" data-k="blank"><i class="sw" style="background:var(--fg-3)"></i>Blanco <span class="mute">${plWellsOf(P,'blank').length}</span></button>
+   <button class="plchip${S.plPaint===''?' on':''}" data-a="pl-pick" data-k="">Borrar</button>
+   <button class="btn sm" data-a="pl-newcond">${ic('plus')}Condición</button></div>
+  ${plGrid(P)}
+  <p class="help">${S.plPaint===undefined?'Elige una condición y pinta los pocillos arrastrando. Las letras y los números rellenan la fila o la columna entera.':(S.plPaint===''?'Arrastra para borrar pocillos.':'Arrastra sobre los pocillos. Pulsa otra vez en la fila o columna para quitarla.')}</p>
+  ${A?`<div class="plchartwrap">${plChart(P,A,sel)}</div>
+   ${(P.conds||[]).filter(c=>c.k!=='blank'&&A.byCond[c.k]).length>1?`<div class="plsel">${(P.conds||[]).filter(c=>c.k!=='blank'&&A.byCond[c.k]).map(c=>`<label class="plchip${sel.includes(c.k)?' on':''}"><input type="checkbox" data-plsel="${c.k}"${sel.includes(c.k)?' checked':''} hidden><i class="sw" style="background:${plCol(c.i)}"></i>${esc(c.l)}</label>`).join('')}</div>`:''}`
+  :'<p class="help">Sube el archivo del lector para ver las curvas.</p>'}
+ </div>
+ <div class="stack">
+  <section class="card"><h2>Datos</h2><div class="form">
+   ${fld('name','Nombre',null,'Curva de crecimiento en M9')}
+   ${fld('code','Código','text','PL-001',1)}
+   ${fld('date','Fecha','date',null,1)}
+   <div class="fld half"><label class="lbl" for="pl-fmt">Formato</label><select id="pl-fmt" data-plsl="fmt">${Object.keys(PL_FMT).map(f=>`<option value="${f}"${+P.fmt===+f?' selected':''}>${f} pocillos</option>`).join('')}</select></div>
+   ${fld('unit','Qué se mide','text','DO 600 nm',1)}
+   <div class="fld half"><label class="lbl" for="pl-str">Cepa</label><select id="pl-str" data-plsl="strain"><option value="">Sin asignar</option>${[...S.data.strains.values()].sort((a,b)=>natCmp(a.code,b.code)).map(d=>`<option value="${esc(d._id)}"${P.strain===d._id?' selected':''}>${esc(d.code)}${d.name?' · '+esc(d.name):''}</option>`).join('')}</select></div>
+   <div class="fld half"><label class="lbl" for="pl-exp">Experimento</label><select id="pl-exp" data-plsl="experiment"><option value="">Sin asignar</option>${[...(S.data.experiments||new Map()).values()].map(d=>`<option value="${esc(d._id)}"${P.experiment===d._id?' selected':''}>${esc(d.code||d.title||'')}</option>`).join('')}</select></div>
+   <div class="fld"><label class="lbl" for="pl-notes">Notas</label><textarea id="pl-notes" data-plk="notes" rows="2">${esc(P.notes||'')}</textarea></div>
+  </div></section>
+  <section class="card"><h2>Lecturas</h2><div class="form">
+   <div class="vacts" style="grid-column:1/-1"><label class="btn">${ic('plus')}Subir el archivo del lector<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm" id="pl-file" hidden></label>${D?`<span class="small mute" style="align-self:center">${Object.keys(D.wells).length} pocillos · ${D.t.length} tiempos · formato ${esc(D.shape)}</span>`:''}</div>
+   <span class="help" style="grid-column:1/-1">Lee CSV, TSV y Excel en tres disposiciones: una columna por pocillo, una fila por lectura (pocillo, tiempo, valor) o una rejilla de 8×12 por cada tiempo.</span>
+   ${D?`<div class="fld half"><label class="lbl" for="pl-tu">El tiempo del archivo está en</label><select id="pl-tu" data-plsl="tunit">${[['h','horas'],['min','minutos'],['s','segundos']].map(([k,l])=>`<option value="${k}"${P.tunit===k?' selected':''}>${l}</option>`).join('')}</select></div>
+   <div class="fld half"><span class="lbl">Duración</span><p class="mono" style="margin:6px 0 0">${fmtN(D.t[D.t.length-1]*(PL_TF[P.tunit]||1),1)} h</p></div>`:''}
+   ${miss?`<p class="hint" style="grid-column:1/-1">Hay ${miss} pocillo${miss>1?'s':''} pintado${miss>1?'s':''} que no viene${miss>1?'n':''} en el archivo.</p>`:''}
+   ${D&&A&&!A.nBlank?`<p class="hint" style="grid-column:1/-1">No has marcado ningún pocillo como blanco: no se resta nada al fondo.</p>`:''}
+  </div></section>
+  ${A?`<section class="card"><h2>Resultados</h2>
+   <div class="scrollx"><table class="ctbl"><thead><tr><th>Condición</th><th class="n">n</th><th class="n">µ (h⁻¹)</th><th class="n">t<sub>d</sub> (h)</th><th class="n">Latencia (h)</th><th class="n">${esc(P.unit||'DO')} máx.</th></tr></thead><tbody>
+   ${(P.conds||[]).filter(c=>A.byCond[c.k]).map(c=>{const B=A.byCond[c.k];const f=(x,d)=>x.m===null?'—':fmtN(x.m,d)+(x.n>1?` <span class="mute">± ${fmtN(x.s,d)}</span>`:'');
+    return `<tr><td><i class="sw" style="background:${plCol(c.i)}"></i> ${esc(c.l)}</td><td class="n mono">${B.n}</td><td class="n mono">${f(B.mu,3)}</td><td class="n mono">${f(B.td,2)}</td><td class="n mono">${f(B.lag,2)}</td><td class="n mono">${f(B.odmax,3)}</td></tr>`}).join('')}
+   </tbody></table></div>
+   <p class="help">µ es la pendiente máxima del logaritmo natural en una ventana de ${P.opt.win} lecturas; el tiempo de duplicación sale de ln 2 ÷ µ y la latencia, de cortar esa recta con la lectura inicial. Media ± desviación entre réplicas.</p>
+   <details class="sub"><summary>Ajustes del análisis</summary><div class="form" style="margin-top:8px">
+    <div class="fld half"><label class="lbl" for="pl-win">Ventana (lecturas)</label><input id="pl-win" type="number" min="3" max="25" data-plo="win" value="${P.opt.win}"></div>
+    <div class="fld half"><label class="lbl" for="pl-sm">Suavizado (lecturas)</label><input id="pl-sm" type="number" min="1" max="15" data-plo="smooth" value="${P.opt.smooth}"></div>
+    <div class="fld half"><label class="lbl" for="pl-fl">Señal mínima</label><input id="pl-fl" type="number" min="0" step="0.005" data-plo="floor" value="${P.opt.floor}"></div>
+    <div class="fld"><label class="switch"><input type="checkbox" data-plo="log"${P.opt.log?' checked':''}> Eje logarítmico</label></div>
+    <div class="fld"><label class="switch"><input type="checkbox" data-plo="band"${P.opt.band!==false?' checked':''}> Dibujar la desviación</label></div>
+   </div></details>
+   <div class="vacts" style="margin-top:10px"><button class="btn sm" data-a="pl-csv">${ic('down')}Descargar la tabla</button><button class="btn sm" data-a="pl-curvas">${ic('down')}Descargar las curvas</button></div>
+  </section>`:''}
+ </div></div>`;
+}
+function plBody(){return S.sub?plEdBody():plListBody()}
+function plCSV(kind){
+ const P=S.pl,D=S.plD,A=D?plAnalyse(P,D):null;if(!A)return;
+ let txt;
+ if(kind==='par'){
+  txt='Condición;n;mu (1/h);sd mu;td (h);sd td;latencia (h);sd latencia;max;sd max;AUC;sd AUC\n';
+  for(const c of (P.conds||[])){const B=A.byCond[c.k];if(!B)continue;
+   const g=x=>x.m===null?'':String(x.m).replace('.',',')+';'+(x.n>1?String(x.s).replace('.',','):'');
+   txt+=[c.l,B.n,g(B.mu),g(B.td),g(B.lag),g(B.odmax),g(B.auc)].join(';')+'\n';}
+ }else{
+  const ks=(P.conds||[]).filter(c=>A.byCond[c.k]).map(c=>c.k);
+  txt='Tiempo (h);'+ks.map(k=>`${A.byCond[k].c.l};sd`).join(';')+'\n';
+  A.t.forEach((tv,i)=>{txt+=String(tv).replace('.',',')+';'+ks.map(k=>{const B=A.byCond[k];
+   return (B.mean[i]===null?'':String(B.mean[i]).replace('.',','))+';'+(B.mean[i]===null?'':String(B.sd[i]).replace('.',','))}).join(';')+'\n'});
+ }
+ const b=new Blob(['﻿'+txt],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);
+ a.download=(P.code||P.name||'placa').replace(/[^\w\-]+/g,'_')+(kind==='par'?'_parametros':'_curvas')+'.csv';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+ toast('CSV descargado');
+}
+
 /* ---------- views ---------- */
 const VIEWS={
  inicio:{shell:()=>'<div id="vb" class="stack"></div>',body:dashBody,deps:'*'},
@@ -4103,6 +4546,7 @@ const VIEWS={
  preparaciones:{shell:()=>listShell('preps'),body:()=>listBody('preps'),deps:'*'},
  mapas:{shell:pmShell,body:pmBody,after:pmAfter,deps:['plasmids'],needsData:false},
  secuenciacion:{shell:sqShell,body:sqBody,deps:['seqruns','plasmids','experiments'],needsData:false},
+ placas:{shell:plShell,body:plBody,deps:['strains','experiments'],needsData:false},
  geles:{shell:gelShell,body:gelBody,after:gelAfter,deps:['gels','strains','plasmids','experiments'],needsData:false},
  calculadoras:{shell:calcShell,body:calcBody,deps:['oligos','reagents','meta','plasmids'],needsData:false},
  ajustes:{shell:setShell,body:setBody,deps:['members','strains','plasmids','oligos','reagents','boxes','protocols']}
@@ -4111,7 +4555,23 @@ const _renderBody=renderBody;
 renderBody=function(){const a=document.activeElement;const vb=$('#vb');if(vb&&a&&vb.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'){S.pendingBody=true;return}S.pendingBody=false;_renderBody()};
 
 /* ---------- events ---------- */
-document.addEventListener('pointerdown',e=>{if(S.gelCrop&&S.route==='geles'&&e.target&&e.target.id==='gelcv')gelCropDrag(e)});
+document.addEventListener('pointerdown',e=>{
+ const w=e.target&&e.target.closest&&e.target.closest('.plwell');
+ if(w&&S.route==='placas'&&S.sub){
+  if(S.plPaint===undefined){toast('Elige antes una condición.');return}
+  e.preventDefault();S.plDrag=1;plPaintWell(w.dataset.w);_renderBody();
+  const mv=ev=>{const el2=document.elementFromPoint(ev.clientX,ev.clientY);
+   const q=el2&&el2.closest&&el2.closest('.plwell');
+   if(q&&q.dataset.w!==S.plLast){S.plLast=q.dataset.w;plPaintWell(q.dataset.w);
+    const c=S.pl.wells[q.dataset.w];const cd=c==='blank'?null:plCond(S.pl,c);
+    q.style.background=c?(c==='blank'?'var(--fg-3)':plCol(cd?cd.i:0)):'';
+    q.style.borderColor=q.style.background||'';
+    q.textContent=c?(c==='blank'?'B':(S.pl.conds.findIndex(x=>x.k===c)+1)):'';
+    q.classList.toggle('on',!!c)}};
+  const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);S.plDrag=0;S.plLast='';_renderBody()};
+  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);return;
+ }
+ if(S.gelCrop&&S.route==='geles'&&e.target&&e.target.id==='gelcv')gelCropDrag(e)});
 document.addEventListener('click',async e=>{
  const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,ty=el.dataset.type,id=el.dataset.id;
  if(el.tagName==='A'&&!['go-import'].includes(a))return;
@@ -4180,6 +4640,14 @@ document.addEventListener('click',async e=>{
   /* calculators */
   /* geles */
   case 'gel-forexp':{S.gelPreExp=el.dataset.id;closeDrawer();location.hash='geles';setTimeout(()=>{const i=$('#gel-file-new');i&&i.click()},120);break}
+  /* placas */
+  case 'pl-save':plSave();break;
+  case 'pl-pick':{const k=el.dataset.k;S.plPaint=(S.plPaint===k)?undefined:k;_renderBody();break}
+  case 'pl-fill':{if(S.plPaint===undefined){toast('Elige antes una condición.');break}plFill(el.dataset.k,+el.dataset.i||0);break}
+  case 'pl-newcond':{openModal({title:'Nueva condición',submit:'Añadir',fields:[{k:'l',l:'Nombre',req:true,ph:'Silvestre en M9'}],onSave:async v=>{const k=plAddCond(S.pl,v.l);S.plPaint=k;S.pl.dirty=true;_renderBody()}});break}
+  case 'pl-condedit':{const c=plCond(S.pl,el.dataset.k);if(!c)break;openModal({title:'Condición',submit:'Guardar',fields:[{k:'l',l:'Nombre',req:true}],values:{l:c.l},onSave:async v=>{c.l=v.l;S.pl.dirty=true;_renderBody()}});break}
+  case 'pl-csv':plCSV('par');break;
+  case 'pl-curvas':plCSV('cur');break;
   /* mapas */
   case 'pm-view':{S.pm.view=el.dataset.v;_renderBody();break}
   case 'pm-save':pmSave();break;
@@ -4208,7 +4676,7 @@ document.addEventListener('click',async e=>{
   case 'gel-mkclear':S.gel.mk.items=[];S.gelMeas=null;_renderBody();break;
   case 'gel-uncrop':S.gel.adj.cl=S.gel.adj.cr=S.gel.adj.ct=S.gel.adj.cb=0;_renderBody();break;
   case 'gel-zoom':{const d=el.dataset.v==='+'?1.25:0.8;S.gelZoom=Math.max(0.5,Math.min(4,(S.gelZoom||1)*d));_renderBody();break}
-  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'experiments', 'gels', 'gelimgs',\n 'chroms', 'seqruns', 'preps', 'plasmidseq']",'Lista copiada');break;
+  case 'copy-rules':copyText("['strains', 'plasmids', 'oligos', 'reagents', 'protocols',\n 'boxes', 'theses', 'milestones', 'meta',\n 'experiments', 'gels', 'gelimgs',\n 'chroms', 'seqruns', 'preps', 'plasmidseq',\n 'plates', 'platedata']",'Lista copiada');break;
   case 'gel-save':gelSave();break;
   case 'gel-del':if(!el.dataset.sure){el.dataset.sure='1';el.textContent='Pulsa otra vez para borrar';break}gelDelete();break;
   case 'gel-export':gelExport(+el.dataset.v||1);break;
@@ -4263,6 +4731,13 @@ document.addEventListener('input',e=>{
  if(t.id==='f-seq'){$('#seqstats').innerHTML=seqStatsHTML(t.value);return}
  if(t.classList.contains('cl-filter')){const q=norm(t.value);$$('label',t.nextElementSibling).forEach(l=>l.hidden=!!q&&!l.dataset.q.includes(q));return}
  if(t.id==='imp-paste'){impState().raw=t.value;return}
+  if(t.id==='pl-file'){const f=t.files&&t.files[0];if(f)plReadFile(f);return}
+  if(t.dataset.plk){S.pl[t.dataset.plk]=t.value;S.pl.dirty=true;return}
+  if(t.dataset.plsl){S.pl[t.dataset.plsl]=t.dataset.plsl==='fmt'?+t.value:t.value;S.pl.dirty=true;_renderBody();return}
+  if(t.dataset.plo){const k=t.dataset.plo;S.pl.opt[k]=t.type==='checkbox'?t.checked:(numV(t.value)||0);S.pl.dirty=true;clearTimeout(S.plT);S.plT=setTimeout(_renderBody,350);return}
+  if(t.dataset.plsel!==undefined){const k=t.dataset.plsel;const cur=(S.plSel&&S.plSel.length?S.plSel:(S.pl.conds||[]).filter(c=>c.k!=='blank').map(c=>c.k).slice(0,8)).slice();
+   const i=cur.indexOf(k);if(i>=0)cur.splice(i,1);else{if(cur.length>=8){toast('Como mucho ocho condiciones a la vez.');t.checked=false;return}cur.push(k)}
+   S.plSel=cur;_renderBody();return}
   if(t.id==='pm-file'){const f=t.files&&t.files[0];if(f)pmReadFile(f);return}
   if(t.dataset.pmk){S.pm[t.dataset.pmk]=t.dataset.pmk==='seq'?sqClean(t.value):t.value;S.pm.dirty=true;clearTimeout(S.pmT);S.pmT=setTimeout(()=>{const a=document.activeElement,pos=a&&a.selectionStart;_renderBody();const x=$('#pm-seq');if(x&&a&&a.id==='pm-seq'){x.focus();try{x.setSelectionRange(pos,pos)}catch(_){}}},700);return}
   if(t.id==='sq-file-obs'||t.id==='sq-file-exp'){const f=t.files&&t.files[0];if(f)sqReadFile(f,t.id==='sq-file-obs'?'obs':'expSeq');return}
